@@ -162,8 +162,19 @@
             color: #ff3333 !important;
         }
         
-        /* Responsive styles */
         @media (max-width: 768px) {
+            body {
+                padding: 10px 15px; /* Equal padding on left and right */
+            }
+            
+            .container {
+                padding: 0; /* Remove container padding on mobile */
+            }
+            
+            .beer-item {
+                margin-bottom: 20px; /* Increased bottom margin between items */
+            }
+            
             .menu-row {
                 grid-template-columns: 1fr;
             }
@@ -174,9 +185,29 @@
             
             .beer-name {
                 font-size: 16px;
+                white-space: normal; /* Allow line breaks on mobile */
+                overflow: visible; /* Show all content */
             }
             
-            .beer-style-group, .beer-abv, .price-info {
+            .beer-name-inner {
+                white-space: normal; /* Allow line breaks */
+                animation: none !important; /* Disable animation on mobile */
+            }
+            
+            .beer-style-group {
+                font-size: 11px; /* Smaller font for style and origin */
+                white-space: nowrap; /* Keep on one line */
+                overflow: hidden; /* Hide overflow */
+                text-overflow: ellipsis; /* Add ellipsis for truncated text */
+                max-width: 100%; /* Ensure it doesn't overflow its container */
+            }
+            
+            .beer-style-inner {
+                white-space: nowrap;
+                animation: none !important; /* Disable animation on mobile */
+            }
+            
+            .beer-abv, .price-info {
                 font-size: 14px;
             }
         }
