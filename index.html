@@ -173,14 +173,6 @@
             opacity: 0.5;
         }
         
-        .tap-1 {
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        
-        .tap-1:hover {
-            color: #ff3333 !important;
-        }
         
         @media (min-width: 769px) and (max-width: 1299px) {
            /* Medium-sized screens breakpoint */
@@ -277,7 +269,7 @@
             }
         }
         
-        /* Last updated indicator */
+        /* Last updated indicator - updated to be clickable */
         .last-updated {
             position: fixed;
             bottom: 5px;
@@ -285,6 +277,13 @@
             font-size: 10px;
             color: var(--muted-color);
             opacity: 0.3;
+            cursor: pointer; /* Add cursor pointer to indicate it's clickable */
+            transition: color 0.3s ease, opacity 0.3s ease; /* Add transition for smooth hover effect */
+        }
+        
+        .last-updated:hover {
+            color: white; /* Change color to white on hover */
+            opacity: 0.8; /* Increase opacity on hover */
         }
         
         /* Add loading indicator */
@@ -581,7 +580,7 @@
                 // Update last updated timestamp
                 updateLastUpdatedIndicator(nowTimestamp);
                 updateCacheStatus('Fresh data from API');
-                updateSyncStatus(`Last sync: ${formatTimestamp(nowTimestamp)} (auto-sync every 5 min)`);
+                updateSyncStatus(`Last sync: ${formatTimestamp(nowTimestamp)} (updates daily)`);
                 
                 return processedData;
             } catch (error) {
@@ -613,200 +612,3 @@
             }
         }
         
-        // Function to check for text overflow and apply animation if needed
-        function checkForTextOverflow() {
-            // Check all beer name elements
-            document.querySelectorAll('.beer-name').forEach(nameElement => {
-                const innerElement = nameElement.querySelector('.beer-name-inner');
-                
-                // If text is wider than container, apply animation
-                if (innerElement && innerElement.offsetWidth > nameElement.offsetWidth) {
-                    // Calculate how far to scroll (container width - full text width)
-                    const scrollDistance = nameElement.offsetWidth - innerElement.offsetWidth;
-                    // Set the custom property for animation
-                    innerElement.style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    // Add animation class
-                    innerElement.classList.add('animate-text');
-                }
-            });
-            
-            // Check all beer style elements
-            document.querySelectorAll('.beer-style-group').forEach(styleElement => {
-                const innerElement = styleElement.querySelector('.beer-style-inner');
-                
-                // If text is wider than container, apply animation
-                if (innerElement && innerElement.offsetWidth > styleElement.offsetWidth) {
-                    // Calculate how far to scroll (container width - full text width)
-                    const scrollDistance = styleElement.offsetWidth - innerElement.offsetWidth;
-                    // Set the custom property for animation
-                    innerElement.style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    // Add animation class
-                    innerElement.classList.add('animate-text');
-                }
-            });
-        }
-        
-        // Function to render the beer menu
-        function renderBeerMenu(beers) {
-            const menuContainer = document.getElementById('menu-container');
-            log('Rendering menu with beers:', beers);
-            
-            if (!beers || beers.length === 0) {
-                menuContainer.innerHTML = '<p style="text-align: center; padding: 20px;">No beers available</p>';
-                return;
-            }
-            
-            // Check if we're on mobile
-            const isMobile = window.innerWidth <= 768;
-            
-            if (isMobile) {
-                // For mobile: render all beers in a single column in sequential order
-                let menuHTML = '';
-                beers.forEach(beer => {
-                    menuHTML += generateBeerItem(beer);
-                });
-                menuContainer.innerHTML = menuHTML;
-            } else {
-                // For desktop: arrange in two balanced columns
-                const leftColumn = beers.slice(0, Math.ceil(beers.length / 2));  // First half
-                const rightColumn = beers.slice(Math.ceil(beers.length / 2));    // Second half
-                
-                // Create the two-column layout
-                let menuHTML = `
-                    <div class="menu-row">
-                        <div class="menu-column">
-                            ${leftColumn.map(beer => generateBeerItem(beer)).join('')}
-                        </div>
-                        <div class="menu-column">
-                            ${rightColumn.map(beer => generateBeerItem(beer)).join('')}
-                        </div>
-                    </div>
-                `;
-                
-                menuContainer.innerHTML = menuHTML;
-            }
-            
-            // After rendering, check for text overflow
-            setTimeout(checkForTextOverflow, 100);
-        }
-        
-        // Generate HTML for a single beer item
-        function generateBeerItem(beer) {
-            // Check if both prices are missing
-            const pricesAvailable = beer.price_s && beer.price_l;
-            const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
-            
-            // Add tap-1 class to tap number 1 for the refresh feature
-            const tapClass = beer.number === "1" ? "tap-1" : "";
-            
-            return `
-                <div class="beer-item">
-                    <div class="beer-content">
-                        <div class="beer-number ${tapClass}" ${beer.number === "1" ? 'id="refresh-trigger"' : ''}>${beer.number}</div>
-                        <div class="beer-name ${titleOpacityClass}">
-                            <span class="beer-name-inner">${beer.name}</span>
-                        </div>
-                        <div class="beer-details-row">
-                            <div class="beer-style-group">
-                                <span class="beer-style-inner">${beer.style} · ${beer.origin}</span>
-                            </div>
-                            <div class="beer-price-group">
-                                <div class="beer-abv">${beer.abv}</div>
-                                <div class="price-info">${beer.price_s || ''}<span class="price-separator">${pricesAvailable ? '/' : ''}</span>${beer.price_l || ''}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Function to check for daily updates
-        function setupDailySync() {
-            // Update sync status indicator
-            updateSyncStatus('Daily sync check enabled');
-            
-            // This function will check if we need to refresh data based on the date
-            function checkDailySync() {
-                const lastApiCallDate = getCookie(LAST_API_CALL_DATE_COOKIE);
-                const today = formatDate(new Date());
-                
-                // If we haven't called the API today, refresh data
-                if (!lastApiCallDate || lastApiCallDate !== today) {
-                    log('Daily sync check - fetching new data');
-                    updateSyncStatus('Daily sync in progress...');
-                    
-                    // Force refresh data
-                    fetchBeerData(true).then(freshData => {
-                        renderBeerMenu(freshData);
-                        updateSyncStatus(`Last sync: ${formatTimestamp(new Date().getTime())} (updates daily)`);
-                    });
-                } else {
-                    log('Daily sync check - already updated today');
-                    updateSyncStatus(`Last sync: ${formatTimestamp(getCookie(LAST_UPDATE_TIMESTAMP_COOKIE))} (updates daily)`);
-                }
-            }
-            
-            // Check for updates whenever the page loads
-            checkDailySync();
-        }
-        
-        // Initialize the menu when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            log('DOM loaded, initializing menu');
-            
-            // Output current cookies for debugging
-            log('Last API call date cookie:', getCookie(LAST_API_CALL_DATE_COOKIE));
-            log('API call count cookie:', getCookie(API_CALL_COUNT_COOKIE));
-            log('Last update timestamp cookie:', getCookie(LAST_UPDATE_TIMESTAMP_COOKIE));
-            
-            // Check for timestamp and update indicator
-            const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
-            
-            if (lastUpdateTimestamp) {
-                updateLastUpdatedIndicator(lastUpdateTimestamp);
-            }
-            
-            // Fetch beer data and render menu
-            fetchBeerData().then(data => {
-                // Render the menu with the data
-                renderBeerMenu(data);
-                
-                // Add event listener to tap number 1 for refresh functionality
-                const refreshTrigger = document.getElementById('refresh-trigger');
-                if (refreshTrigger) {
-                    refreshTrigger.addEventListener('click', function() {
-                        log('Refresh triggered by tap #1');
-                        updateCacheStatus('Manual refresh triggered...');
-                        
-                        // Force refresh data
-                        fetchBeerData(true).then(freshData => {
-                            renderBeerMenu(freshData);
-                        });
-                    });
-                }
-                
-                // Set up daily synchronization
-                setupDailySync();
-            });
-            
-            // Add window resize event listener with debouncing
-            let resizeTimeout;
-            window.addEventListener('resize', function() {
-                // Clear any existing timeout
-                clearTimeout(resizeTimeout);
-                
-                // Set a new timeout to wait for resize to finish
-                resizeTimeout = setTimeout(function() {
-                    log('Window resized, re-rendering menu with cached data');
-                    updateCacheStatus('Window resized - using memory cache');
-                    
-                    // Use memory cache for resize events
-                    if (memoryCache.beerData) {
-                        renderBeerMenu(memoryCache.beerData);
-                    }
-                }, 200); // Wait 200ms after last resize event
-            });
-        });
-    </script>
-</body>
-</html>
