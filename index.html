@@ -306,8 +306,8 @@
         // SheetDB API URL (already set up)
         const SHEETDB_API = 'https://sheetdb.io/api/v1/necvv0ny8htba';
         
-        // Auto-sync interval in milliseconds (5 minutes)
-        const SYNC_INTERVAL = 5 * 60 * 1000;
+        // Daily sync check instead of every 5 minutes
+        const DAILY_SYNC_CHECK = true;
         
         // Log function for debugging
         function log(message, data) {
@@ -685,22 +685,34 @@
             `;
         }
         
-        // Function to periodically sync with the Google Sheet
-        function setupAutoSync() {
-            // Set up interval for auto-syncing
-            setInterval(() => {
-                log('Auto-sync triggered');
-                updateSyncStatus('Auto-sync in progress...');
-                
-                // Force refresh data
-                fetchBeerData(true).then(freshData => {
-                    renderBeerMenu(freshData);
-                    updateSyncStatus(`Last sync: ${formatTimestamp(new Date().getTime())} (auto-sync every 5 min)`);
-                });
-            }, SYNC_INTERVAL);
+        // Function to check for daily updates
+        function setupDailySync() {
+            // Update sync status indicator
+            updateSyncStatus('Daily sync check enabled');
             
-            // Initial sync status
-            updateSyncStatus('Auto-sync enabled (every 5 min)');
+            // This function will check if we need to refresh data based on the date
+            function checkDailySync() {
+                const lastApiCallDate = getCookie(LAST_API_CALL_DATE_COOKIE);
+                const today = formatDate(new Date());
+                
+                // If we haven't called the API today, refresh data
+                if (!lastApiCallDate || lastApiCallDate !== today) {
+                    log('Daily sync check - fetching new data');
+                    updateSyncStatus('Daily sync in progress...');
+                    
+                    // Force refresh data
+                    fetchBeerData(true).then(freshData => {
+                        renderBeerMenu(freshData);
+                        updateSyncStatus(`Last sync: ${formatTimestamp(new Date().getTime())} (updates daily)`);
+                    });
+                } else {
+                    log('Daily sync check - already updated today');
+                    updateSyncStatus(`Last sync: ${formatTimestamp(getCookie(LAST_UPDATE_TIMESTAMP_COOKIE))} (updates daily)`);
+                }
+            }
+            
+            // Check for updates whenever the page loads
+            checkDailySync();
         }
         
         // Initialize the menu when the page loads
@@ -738,8 +750,8 @@
                     });
                 }
                 
-                // Set up automatic synchronization
-                setupAutoSync();
+                // Set up daily synchronization
+                setupDailySync();
             });
             
             // Add window resize event listener with debouncing
