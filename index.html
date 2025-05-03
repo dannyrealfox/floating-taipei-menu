@@ -172,15 +172,6 @@
             opacity: 0.5;
         }
         
-        .tap-1 {
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        
-        .tap-1:hover {
-            color: #ff3333 !important;
-        }
-        
         @media (min-width: 769px) and (max-width: 1299px) {
            /* Medium-sized screens breakpoint */
             .beer-number {
@@ -284,6 +275,13 @@
             font-size: 10px;
             color: var(--muted-color);
             opacity: 0.3;
+            cursor: pointer; /* Add cursor pointer to indicate it's clickable */
+            transition: color 0.3s ease, opacity 0.3s ease; /* Add transition for smooth hover effect */
+        }
+
+        .last-updated:hover {
+            color: white; /* Change color to white on hover */
+            opacity: 0.8; /* Increase opacity on hover */
         }
         
         /* Add loading indicator */
@@ -696,12 +694,12 @@
             const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
             
             // Add tap-1 class to tap number 1 for the refresh feature
-            const tapClass = beer.number === "1" ? "tap-1" : "";
+            //const tapClass = beer.number === "1" ? "tap-1" : "";
             
             return `
                 <div class="beer-item">
                     <div class="beer-content">
-                        <div class="beer-number ${tapClass}" ${beer.number === "1" ? 'id="refresh-trigger"' : ''}>${beer.number}</div>
+                        <div class="beer-number>${beer.number}</div>
                         <div class="beer-name ${titleOpacityClass}">
                             <span class="beer-name-inner">${beer.name}</span>
                         </div>
@@ -770,19 +768,19 @@
                 // Render the menu with the data
                 renderBeerMenu(data);
                 
-                // Add event listener to tap number 1 for refresh functionality
-                const refreshTrigger = document.getElementById('refresh-trigger');
-                if (refreshTrigger) {
-                    refreshTrigger.addEventListener('click', function() {
-                        log('Refresh triggered by tap #1');
-                        updateCacheStatus('Manual refresh triggered...');
-                        
-                        // Force refresh data
-                        fetchBeerData(true).then(freshData => {
-                            renderBeerMenu(freshData);
-                        });
+                // Add event listener to last-updated for refresh functionality
+            const lastUpdatedElement = document.getElementById('last-updated');
+            if (lastUpdatedElement) {
+                lastUpdatedElement.addEventListener('click', function() {
+                    log('Refresh triggered by last-updated element');
+                    updateCacheStatus('Manual refresh triggered...');
+                    
+                    // Force refresh data
+                    fetchBeerData(true).then(freshData => {
+                        renderBeerMenu(freshData);
                     });
-                }
+                });
+            }
                 
                 // Set up daily synchronization
                 setupDailySync();
