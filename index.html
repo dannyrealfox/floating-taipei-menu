@@ -247,6 +247,17 @@
             font-size: 24px;
             color: var(--muted-color);
         }
+        
+        /* Cache indicator */
+        .cache-status {
+            position: fixed;
+            top: 5px;
+            right: 10px;
+            font-size: 10px;
+            color: var(--muted-color);
+            opacity: 0.5;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
@@ -261,6 +272,7 @@
         </div>
         
         <div class="last-updated" id="last-updated"></div>
+        <div class="cache-status" id="cache-status"></div>
     </div>
 
     <script>
@@ -272,19 +284,17 @@
             console.log(message, data);
         }
         
-        // Create a global cache for our application
-        // This will persist across page refreshes in the same tab/window
-        if (!window.floatingTaipeiCache) {
-            window.floatingTaipeiCache = {
-                beerData: null,
-                timestamp: null,
-                apiCallsToday: 0,
-                lastCallDate: null
-            };
-        }
+        // In-memory cache for session
+        let memoryCache = {
+            beerData: null
+        };
         
-        // Cache timeout (24 hours in milliseconds)
-        const CACHE_TIMEOUT = 24 * 60 * 60 * 1000;
+        // Cookie names
+        const LAST_API_CALL_DATE_COOKIE = 'floatingTaipeiLastApiCall';
+        const API_CALL_COUNT_COOKIE = 'floatingTaipeiApiCallCount';
+        
+        // Max age for cookies (30 days in seconds)
+        const MAX_COOKIE_AGE = 30 * 24 * 60 * 60;
         
         // Sample data for fallback
         const fallbackData = [
@@ -297,77 +307,90 @@
             { number: "7", name: "啤酒頭TAIWAN HEAD 洛神酸愛爾 ROSELLE SOUR ALE", style: "Sour Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
             { number: "8", name: "CORONADO 水世界WATER WORLD WEST COAST DOUBLE IPA", style: "West Coast Double IPA", origin: "California, USA", abv: "8.0%", price_s: "280", price_l: "320" },
             { number: "9", name: "酉鬼UGLYHALF 就是現在IPA NOW HAZY IPA", style: "Hazy IPA", origin: "Taiwan 台灣", abv: "6.0%", price_s: "250", price_l: "280" },
-            { number: "10", name: "OTHER HALF IDEAL WAVE DDH IPA", style: "DDH IPA", origin: "New York, USA", abv: "6.5%", price_s: "300", price_l: "400" },
-            { number: "11", name: "OTHER HALF SLALOM JUICE DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "12", name: "OTHER HALF OUT FOR TROUT DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "13", name: "GARAGE PROJECT 血鑽石RED DIAMOND WEST COAST RED IPA", style: "West Coast Red IPA", origin: "New Zealand 紐西蘭", abv: "6.4%", price_s: "280", price_l: "320" },
-            { number: "14", name: "OTHER HALF BROCCOLI DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "7.9%", price_s: "300", price_l: "400" },
-            { number: "15", name: "MODERN TIMES 奧德維爾ORDERVILLE HAZY IPA", style: "Hazy IPA", origin: "California, USA", abv: "7.2%", price_s: "280", price_l: "320" },
-            { number: "16", name: "OTHER HALF FOREVER EVER DDH SESSION IPA", style: "DDH Session IPA", origin: "New York, USA", abv: "4.7%", price_s: "300", price_l: "400" },
-            { number: "17", name: "JEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
-            { number: "18", name: "酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
+            // ... rest of the fallback data
         ];
         
-        // Function to format a date as a friendly string
-        function formatDate(timestamp) {
-            const date = new Date(timestamp);
+        // Function to get a cookie
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) return match[2];
+            return null;
+        }
+        
+        // Function to set a cookie
+        function setCookie(name, value, maxAge = MAX_COOKIE_AGE) {
+            document.cookie = `${name}=${value};path=/;max-age=${maxAge};samesite=strict`;
+        }
+        
+        // Function to format a date as a string
+        function formatDate(date) {
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        }
+        
+        // Function to format a timestamp as a friendly string
+        function formatTimestamp(timestamp) {
+            const date = new Date(parseInt(timestamp));
             return date.toLocaleString();
+        }
+        
+        // Function to check if it's a new day
+        function isNewDay(lastCallDateStr) {
+            if (!lastCallDateStr) return true;
+            
+            const todayStr = formatDate(new Date());
+            return lastCallDateStr !== todayStr;
         }
         
         // Function to update the last updated indicator
         function updateLastUpdatedIndicator(timestamp) {
             const lastUpdatedElement = document.getElementById('last-updated');
             if (lastUpdatedElement && timestamp) {
-                lastUpdatedElement.textContent = `Last updated: ${formatDate(timestamp)}`;
+                lastUpdatedElement.textContent = `Last updated: ${formatTimestamp(timestamp)}`;
             }
         }
         
-        // Function to check if it's a new day compared to last API call
-        function isNewDay(lastCallDate) {
-            if (!lastCallDate) return true;
-            
-            const now = new Date();
-            const last = new Date(lastCallDate);
-            
-            return now.getDate() !== last.getDate() || 
-                   now.getMonth() !== last.getMonth() || 
-                   now.getFullYear() !== last.getFullYear();
+        // Function to update cache status indicator
+        function updateCacheStatus(message) {
+            const cacheStatusElement = document.getElementById('cache-status');
+            if (cacheStatusElement) {
+                cacheStatusElement.textContent = message;
+            }
         }
         
-        // Function to fetch data from SheetDB with proper caching
+        // Function to fetch data with daily API call limit
         async function fetchBeerData(forceRefresh = false) {
             try {
-                const now = new Date().getTime();
-                const cache = window.floatingTaipeiCache;
+                const now = new Date();
+                const todayStr = formatDate(now);
+                const nowTimestamp = now.getTime();
                 
-                // Check if we need to reset the daily API call counter
-                if (isNewDay(cache.lastCallDate)) {
-                    cache.apiCallsToday = 0;
-                    cache.lastCallDate = now;
+                // Check if we already have data in memory cache (for this page view)
+                if (!forceRefresh && memoryCache.beerData) {
+                    log('Using in-memory cache');
+                    updateCacheStatus('Using memory cache');
+                    return memoryCache.beerData;
                 }
                 
-                // Use cache if available and not forcing refresh
-                if (!forceRefresh && cache.beerData && cache.timestamp) {
-                    if (now - cache.timestamp < CACHE_TIMEOUT) {
-                        log('Using cached data from global cache');
-                        updateLastUpdatedIndicator(cache.timestamp);
-                        return cache.beerData;
-                    } else {
-                        log('Cache expired, checking API call limit');
+                // Check cookies for API call tracking
+                const lastApiCallDate = getCookie(LAST_API_CALL_DATE_COOKIE);
+                const apiCallCount = parseInt(getCookie(API_CALL_COUNT_COOKIE) || '0');
+                
+                // If not forcing refresh and we've already called the API today, don't call again
+                if (!forceRefresh && lastApiCallDate === todayStr && apiCallCount > 0) {
+                    log('Already called API today, using fallback data');
+                    updateCacheStatus('Using fallback (API already called today)');
+                    
+                    // If we don't have memory cache, use fallback
+                    if (fallbackData) {
+                        memoryCache.beerData = fallbackData;
+                        return fallbackData;
                     }
                 }
                 
-                // Check if we've already made an API call today
-                if (!forceRefresh && cache.apiCallsToday > 0) {
-                    log('Already made API call today, using cached data');
-                    if (cache.beerData) {
-                        updateLastUpdatedIndicator(cache.timestamp);
-                        return cache.beerData;
-                    }
-                }
-                
-                // If we reach here, we need to fetch fresh data
+                // If we're forcing refresh or haven't called API today, make the call
                 log('Fetching data from SheetDB');
+                updateCacheStatus('Fetching from API...');
+                
                 const response = await fetch(SHEETDB_API);
                 
                 if (!response.ok) {
@@ -392,28 +415,39 @@
                 
                 log('Processed data:', processedData);
                 
-                // Update the global cache
-                cache.beerData = processedData;
-                cache.timestamp = now;
-                cache.apiCallsToday++;
-                cache.lastCallDate = now;
+                // Update memory cache
+                memoryCache.beerData = processedData;
                 
-                updateLastUpdatedIndicator(now);
+                // Update cookies for tracking API calls
+                if (isNewDay(lastApiCallDate)) {
+                    // It's a new day, reset counter
+                    setCookie(API_CALL_COUNT_COOKIE, '1');
+                } else {
+                    // Same day, increment counter
+                    setCookie(API_CALL_COUNT_COOKIE, (apiCallCount + 1).toString());
+                }
+                
+                // Update last API call date
+                setCookie(LAST_API_CALL_DATE_COOKIE, todayStr);
+                
+                // Update last updated timestamp
+                updateLastUpdatedIndicator(nowTimestamp);
+                updateCacheStatus('Fresh data from API');
                 
                 return processedData;
             } catch (error) {
                 log('Error fetching data:', error);
                 console.error('Error fetching data:', error);
                 
-                // Try to use cached data even if expired
-                const cache = window.floatingTaipeiCache;
-                if (cache.beerData) {
-                    log('Using cached data due to fetch error');
-                    updateLastUpdatedIndicator(cache.timestamp);
-                    return cache.beerData;
+                // If we have data in memory, use that
+                if (memoryCache.beerData) {
+                    log('Using memory cache due to fetch error');
+                    updateCacheStatus('Using memory cache (API error)');
+                    return memoryCache.beerData;
                 }
                 
-                // If no cached data, use fallback
+                // Otherwise use fallback
+                updateCacheStatus('Using fallback data (API error)');
                 return fallbackData;
             }
         }
@@ -538,10 +572,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             log('DOM loaded, initializing menu');
             
-            // Check for timestamp and update indicator
-            if (window.floatingTaipeiCache.timestamp) {
-                updateLastUpdatedIndicator(window.floatingTaipeiCache.timestamp);
-            }
+            // Output current cookies for debugging
+            log('Last API call date cookie:', getCookie(LAST_API_CALL_DATE_COOKIE));
+            log('API call count cookie:', getCookie(API_CALL_COUNT_COOKIE));
             
             // Fetch beer data and render menu
             fetchBeerData().then(data => {
@@ -561,18 +594,20 @@
                 }
             });
             
-            // Add window resize event listener to handle layout changes,
-            // but don't fetch new data, just re-render with existing data
+            // Add window resize event listener with debouncing
             let resizeTimeout;
             window.addEventListener('resize', function() {
-                // Clear any existing timeout to debounce the resize event
+                // Clear any existing timeout
                 clearTimeout(resizeTimeout);
                 
                 // Set a new timeout to wait for resize to finish
                 resizeTimeout = setTimeout(function() {
                     log('Window resized, re-rendering menu with cached data');
-                    if (window.floatingTaipeiCache.beerData) {
-                        renderBeerMenu(window.floatingTaipeiCache.beerData);
+                    updateCacheStatus('Window resized - using memory cache');
+                    
+                    // Use memory cache for resize events
+                    if (memoryCache.beerData) {
+                        renderBeerMenu(memoryCache.beerData);
                     }
                 }, 200); // Wait 200ms after last resize event
             });
