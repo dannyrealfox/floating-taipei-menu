@@ -292,14 +292,7 @@
         // Cookie names
         const LAST_API_CALL_DATE_COOKIE = 'floatingTaipeiLastApiCall';
         const API_CALL_COUNT_COOKIE = 'floatingTaipeiApiCallCount';
-        const CACHED_DATA_COOKIE = 'floatingTaipeiCachedData';
         const LAST_UPDATE_TIMESTAMP_COOKIE = 'floatingTaipeiLastUpdate';
-
-        // IndexedDB storage name
-        const DB_NAME = 'FloatingTaipeiDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'beerData';
-        const DATA_KEY = 'cachedBeerData';
         
         // Sample data for fallback
         const fallbackData = [
@@ -322,108 +315,6 @@
             { number: "17", name: "JEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
             { number: "18", name: "酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
         ];
-        
-        // Initialize IndexedDB to store beer data
-        function initIndexedDB() {
-            return new Promise((resolve, reject) => {
-                if (!window.indexedDB) {
-                    log('Your browser doesn\'t support IndexedDB');
-                    resolve(false);
-                    return;
-                }
-                
-                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-                
-                request.onerror = function(event) {
-                    log('Error opening IndexedDB:', event);
-                    resolve(false);
-                };
-                
-                request.onsuccess = function(event) {
-                    log('IndexedDB opened successfully');
-                    resolve(true);
-                };
-                
-                request.onupgradeneeded = function(event) {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                        log('Object store created');
-                    }
-                };
-            });
-        }
-        
-        // Save data to IndexedDB
-        function saveToIndexedDB(data, timestamp) {
-            return new Promise((resolve, reject) => {
-                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-                
-                request.onerror = function(event) {
-                    log('Error opening IndexedDB:', event);
-                    resolve(false);
-                };
-                
-                request.onsuccess = function(event) {
-                    const db = event.target.result;
-                    const transaction = db.transaction([STORE_NAME], 'readwrite');
-                    const store = transaction.objectStore(STORE_NAME);
-                    
-                    const storeData = {
-                        id: DATA_KEY,
-                        data: data,
-                        timestamp: timestamp
-                    };
-                    
-                    const saveRequest = store.put(storeData);
-                    
-                    saveRequest.onsuccess = function() {
-                        log('Data saved to IndexedDB');
-                        resolve(true);
-                    };
-                    
-                    saveRequest.onerror = function(event) {
-                        log('Error saving to IndexedDB:', event);
-                        resolve(false);
-                    };
-                };
-            });
-        }
-        
-        // Load data from IndexedDB
-        function loadFromIndexedDB() {
-            return new Promise((resolve, reject) => {
-                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-                
-                request.onerror = function(event) {
-                    log('Error opening IndexedDB:', event);
-                    resolve(null);
-                };
-                
-                request.onsuccess = function(event) {
-                    const db = event.target.result;
-                    const transaction = db.transaction([STORE_NAME], 'readonly');
-                    const store = transaction.objectStore(STORE_NAME);
-                    
-                    const getRequest = store.get(DATA_KEY);
-                    
-                    getRequest.onsuccess = function() {
-                        if (getRequest.result) {
-                            log('Data loaded from IndexedDB');
-                            resolve(getRequest.result);
-                        } else {
-                            log('No data found in IndexedDB');
-                            resolve(null);
-                        }
-                    };
-                    
-                    getRequest.onerror = function(event) {
-                        log('Error loading from IndexedDB:', event);
-                        resolve(null);
-                    };
-                };
-            });
-        }
         
         // Function to get a cookie
         function getCookie(name) {
@@ -475,6 +366,34 @@
             }
         }
         
+        // Function to save cached beer data to sessionStorage
+        function saveCachedData(data) {
+            try {
+                // Store data in sessionStorage
+                sessionStorage.setItem('beerMenuData', JSON.stringify(data));
+                log('Saved data to sessionStorage');
+                return true;
+            } catch (e) {
+                log('Error saving to sessionStorage:', e);
+                return false;
+            }
+        }
+        
+        // Function to load cached beer data from sessionStorage
+        function loadCachedData() {
+            try {
+                const cachedData = sessionStorage.getItem('beerMenuData');
+                if (cachedData) {
+                    log('Loaded data from sessionStorage');
+                    return JSON.parse(cachedData);
+                }
+                return null;
+            } catch (e) {
+                log('Error loading from sessionStorage:', e);
+                return null;
+            }
+        }
+        
         // Function to fetch data with proper caching
         async function fetchBeerData(forceRefresh = false) {
             try {
@@ -494,39 +413,16 @@
                 const apiCallCount = parseInt(getCookie(API_CALL_COUNT_COOKIE) || '0');
                 const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
                 
-                // Try to load data from IndexedDB
-                let dbInitialized = false;
-                try {
-                    dbInitialized = await initIndexedDB();
-                } catch (e) {
-                    log('IndexedDB initialization error:', e);
-                }
-                
-                let cachedData = null;
-                if (dbInitialized) {
-                    try {
-                        const dbData = await loadFromIndexedDB();
-                        if (dbData && dbData.data) {
-                            cachedData = dbData.data;
-                            log('Loaded data from IndexedDB:', cachedData);
-                            
-                            // Update last update timestamp from DB if available
-                            if (dbData.timestamp && !lastUpdateTimestamp) {
-                                updateLastUpdatedIndicator(dbData.timestamp);
-                            }
-                        }
-                    } catch (e) {
-                        log('IndexedDB load error:', e);
-                    }
-                }
+                // Try to load data from sessionStorage (persists across page refreshes)
+                let cachedData = loadCachedData();
                 
                 // If not forcing refresh and we've already called the API today, use cached data
                 if (!forceRefresh && lastApiCallDate === todayStr && apiCallCount > 0) {
                     log('Already called API today, using cached data');
                     
-                    // If we have cached data from IndexedDB, use it
+                    // If we have cached data from sessionStorage, use it
                     if (cachedData) {
-                        updateCacheStatus('Using cached data (IndexedDB)');
+                        updateCacheStatus('Using cached data (sessionStorage)');
                         memoryCache.beerData = cachedData;
                         
                         if (lastUpdateTimestamp) {
@@ -573,6 +469,9 @@
                 // Update memory cache
                 memoryCache.beerData = processedData;
                 
+                // Save to sessionStorage
+                saveCachedData(processedData);
+                
                 // Update cookies for tracking API calls
                 if (isNewDay(lastApiCallDate)) {
                     // It's a new day, reset counter
@@ -585,15 +484,6 @@
                 // Update last API call date
                 setCookie(LAST_API_CALL_DATE_COOKIE, todayStr);
                 setCookie(LAST_UPDATE_TIMESTAMP_COOKIE, nowTimestamp.toString());
-                
-                // Save data to IndexedDB
-                if (dbInitialized) {
-                    try {
-                        await saveToIndexedDB(processedData, nowTimestamp);
-                    } catch (e) {
-                        log('IndexedDB save error:', e);
-                    }
-                }
                 
                 // Update last updated timestamp
                 updateLastUpdatedIndicator(nowTimestamp);
@@ -611,17 +501,16 @@
                     return memoryCache.beerData;
                 }
                 
-                // Try to load from IndexedDB
+                // Try to load from sessionStorage
                 try {
-                    const dbData = await loadFromIndexedDB();
-                    if (dbData && dbData.data) {
-                        memoryCache.beerData = dbData.data;
-                        updateCacheStatus('Using IndexedDB cache (API error)');
-                        updateLastUpdatedIndicator(dbData.timestamp);
-                        return dbData.data;
+                    const sessionData = loadCachedData();
+                    if (sessionData) {
+                        memoryCache.beerData = sessionData;
+                        updateCacheStatus('Using sessionStorage cache (API error)');
+                        return sessionData;
                     }
                 } catch (e) {
-                    log('IndexedDB load error during fetch error handling:', e);
+                    log('sessionStorage load error during fetch error handling:', e);
                 }
                 
                 // Otherwise use fallback
@@ -799,3 +688,6 @@
                 }, 200); // Wait 200ms after last resize event
             });
         });
+    </script>
+</body>
+</html>
