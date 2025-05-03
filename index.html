@@ -202,6 +202,15 @@
         }
 
         @media (max-width: 768px) {
+            Header {
+                display: block; /* Header shows on mobile */
+            }
+
+            .centered-logo {
+                max-height: 80px; /* Adjust based on your logo size */
+                width: auto;
+            }
+            
             body {
                 padding: 10px 15px; /* Equal padding on left and right */
             }
@@ -318,8 +327,9 @@
 <body>
     <div class="container">
         <header>
-            <h1>FLOATING TAIPEI</h1>
-            <p class="subtitle">精釀啤酒菜單 / CRAFT BEER MENU</p>
+            <a href="https://maps.app.goo.gl/2UUBqW9DnVAZRiTw7" target="_blank">
+              <img src="image/FTlogo.svg" alt="Floating Taipei" class="centered-logo">
+            </a>
         </header>
         
         <div class="menu-grid" id="menu-container">
