@@ -272,12 +272,19 @@
             console.log(message, data);
         }
         
-        // Variables to cache the data in memory (since localStorage isn't available)
-        let cachedBeerData = null;
-        let lastFetchTimestamp = null;
+        // Create a global cache for our application
+        // This will persist across page refreshes in the same tab/window
+        if (!window.floatingTaipeiCache) {
+            window.floatingTaipeiCache = {
+                beerData: null,
+                timestamp: null,
+                apiCallsToday: 0,
+                lastCallDate: null
+            };
+        }
         
-        // Maximum time before refetching (24 hours in milliseconds)
-        const MAX_CACHE_AGE = 24 * 60 * 60 * 1000;
+        // Cache timeout (24 hours in milliseconds)
+        const CACHE_TIMEOUT = 24 * 60 * 60 * 1000;
         
         // Sample data for fallback
         const fallbackData = [
@@ -315,19 +322,47 @@
             }
         }
         
-        // Function to fetch data from SheetDB with in-memory caching
+        // Function to check if it's a new day compared to last API call
+        function isNewDay(lastCallDate) {
+            if (!lastCallDate) return true;
+            
+            const now = new Date();
+            const last = new Date(lastCallDate);
+            
+            return now.getDate() !== last.getDate() || 
+                   now.getMonth() !== last.getMonth() || 
+                   now.getFullYear() !== last.getFullYear();
+        }
+        
+        // Function to fetch data from SheetDB with proper caching
         async function fetchBeerData(forceRefresh = false) {
             try {
                 const now = new Date().getTime();
+                const cache = window.floatingTaipeiCache;
                 
-                // Check if we have cached data and it's not expired
-                if (!forceRefresh && cachedBeerData && lastFetchTimestamp) {
-                    // Check if cache is still valid (less than 24 hours old)
-                    if (now - lastFetchTimestamp < MAX_CACHE_AGE) {
-                        log('Using cached data');
-                        return cachedBeerData;
+                // Check if we need to reset the daily API call counter
+                if (isNewDay(cache.lastCallDate)) {
+                    cache.apiCallsToday = 0;
+                    cache.lastCallDate = now;
+                }
+                
+                // Use cache if available and not forcing refresh
+                if (!forceRefresh && cache.beerData && cache.timestamp) {
+                    if (now - cache.timestamp < CACHE_TIMEOUT) {
+                        log('Using cached data from global cache');
+                        updateLastUpdatedIndicator(cache.timestamp);
+                        return cache.beerData;
                     } else {
-                        log('Cache expired, fetching fresh data');
+                        log('Cache expired, checking API call limit');
+                    }
+                }
+                
+                // Check if we've already made an API call today
+                if (!forceRefresh && cache.apiCallsToday > 0) {
+                    log('Already made API call today, using cached data');
+                    if (cache.beerData) {
+                        updateLastUpdatedIndicator(cache.timestamp);
+                        return cache.beerData;
                     }
                 }
                 
@@ -357,9 +392,12 @@
                 
                 log('Processed data:', processedData);
                 
-                // Store in memory cache
-                cachedBeerData = processedData;
-                lastFetchTimestamp = now;
+                // Update the global cache
+                cache.beerData = processedData;
+                cache.timestamp = now;
+                cache.apiCallsToday++;
+                cache.lastCallDate = now;
+                
                 updateLastUpdatedIndicator(now);
                 
                 return processedData;
@@ -368,9 +406,11 @@
                 console.error('Error fetching data:', error);
                 
                 // Try to use cached data even if expired
-                if (cachedBeerData) {
-                    log('Using expired cached data due to fetch error');
-                    return cachedBeerData;
+                const cache = window.floatingTaipeiCache;
+                if (cache.beerData) {
+                    log('Using cached data due to fetch error');
+                    updateLastUpdatedIndicator(cache.timestamp);
+                    return cache.beerData;
                 }
                 
                 // If no cached data, use fallback
@@ -498,28 +538,26 @@
         document.addEventListener('DOMContentLoaded', function() {
             log('DOM loaded, initializing menu');
             
-            // Set to track which page loads we've already made API calls for
-            const pageLoadId = Date.now();
-            window.lastPageLoadId = pageLoadId;
+            // Check for timestamp and update indicator
+            if (window.floatingTaipeiCache.timestamp) {
+                updateLastUpdatedIndicator(window.floatingTaipeiCache.timestamp);
+            }
             
             // Fetch beer data and render menu
             fetchBeerData().then(data => {
-                // Only update the UI if this is still the most recent page load
-                if (window.lastPageLoadId === pageLoadId) {
-                    // Render the menu with the data
-                    renderBeerMenu(data);
-                    
-                    // Add event listener to tap number 1 for refresh functionality
-                    const refreshTrigger = document.getElementById('refresh-trigger');
-                    if (refreshTrigger) {
-                        refreshTrigger.addEventListener('click', function() {
-                            log('Refresh triggered by tap #1');
-                            // Force refresh data
-                            fetchBeerData(true).then(freshData => {
-                                renderBeerMenu(freshData);
-                            });
+                // Render the menu with the data
+                renderBeerMenu(data);
+                
+                // Add event listener to tap number 1 for refresh functionality
+                const refreshTrigger = document.getElementById('refresh-trigger');
+                if (refreshTrigger) {
+                    refreshTrigger.addEventListener('click', function() {
+                        log('Refresh triggered by tap #1');
+                        // Force refresh data
+                        fetchBeerData(true).then(freshData => {
+                            renderBeerMenu(freshData);
                         });
-                    }
+                    });
                 }
             });
             
@@ -533,8 +571,8 @@
                 // Set a new timeout to wait for resize to finish
                 resizeTimeout = setTimeout(function() {
                     log('Window resized, re-rendering menu with cached data');
-                    if (cachedBeerData) {
-                        renderBeerMenu(cachedBeerData);
+                    if (window.floatingTaipeiCache.beerData) {
+                        renderBeerMenu(window.floatingTaipeiCache.beerData);
                     }
                 }, 200); // Wait 200ms after last resize event
             });
