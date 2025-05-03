@@ -106,7 +106,7 @@
         
         .beer-price-group {
             display: flex;
-            align-items: center;
+            align-items: baseline;
             text-align: right;
         }
         
@@ -176,6 +176,10 @@
                 margin-bottom: 20px; /* Increased bottom margin between items */
             }
             
+            .beer-content {
+            gap: 0px 16px; /* Less margins */
+            }   
+
             .menu-row {
                 grid-template-columns: 1fr;
             }
@@ -212,8 +216,17 @@
                 animation: none !important; /* Disable animation on mobile */
             }
             
-            .beer-abv, .price-info {
+            .beer-abv {
                 font-size: 14px;
+                margin-right: 6px;
+            }
+
+            .price-info {
+                font-size: 14px;
+            }
+
+            .price-separator {
+                font-size: 12px;
             }
         }
     </style>
