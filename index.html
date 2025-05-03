@@ -1,39 +1,4 @@
-        /* Style for tap number 1 as refresh button */
-        .tap-1 {
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        
-        .tap-1:hover {
-            color: #ff3333 !important;
-        }        /* Add opacity class for beers without prices */
-        .opacity-50 {
-            opacity: 0.5;
-        }
-        
-        /* Add refresh icon styles */
-        .refresh-container {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .container:hover .refresh-container {
-            opacity: 0.6;
-        }
-        
-        .refresh-container:hover {
-            opacity: 1 !important;
-        }
-        
-        .refresh-icon {
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            fill: #aaa;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -41,483 +6,249 @@
     <title>Floating Taipei Menu</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        @font-face {
-            font-family: 'Copperplate';
-            src: local('Copperplate'), local('Copperplate Gothic Light');
-            font-weight: normal;
-            font-style: normal;
-        }
-        
-        :root {
-            --background-color: #000000;
-            --text-color: #ffffff;
-            --muted-color: #A7A1A1;
-            --number-color: #D1AF90;
-            --price-color: #D1AF90;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
+            background-color: #000000;
+            color: #ffffff;
             font-family: 'Noto Sans', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.3;
-            padding: 10px;
+            padding: 20px;
+            line-height: 1.4;
         }
         
         .container {
-            max-width: 1920px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
-        header {
-            display: none;
+        .debug-info {
+            background-color: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
         }
         
-        .menu-row {
+        .menu-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
             gap: 20px;
-            margin-bottom: 2px;
+            margin-top: 20px;
         }
         
         .beer-item {
-            display: block;
-            padding: 0;
-            margin-bottom: 10px;
-        }
-        
-        .beer-content {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            grid-template-rows: auto auto;
-            gap: 4px 15px;
-        }
-        
-        .beer-number {
-            font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 30px;
-            font-weight: normal;
-            color: var(--number-color);
-            grid-row: 1 / span 2;
-            align-self: center;
-            width: 40px;
-            text-align: right;
-            letter-spacing: -0.2em;
+            background-color: #222;
+            padding: 15px;
+            border-radius: 5px;
         }
         
         .beer-name {
             font-size: 18px;
-            font-weight: 500;
-            grid-column: 2;
-            grid-row: 1;
-            width: 100%;
-            margin-bottom: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            position: relative;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
         
-        .beer-details-row {
-            grid-column: 2;
-            grid-row: 2;
+        .beer-details {
             display: flex;
             justify-content: space-between;
-            width: 100%;
+            margin-top: 10px;
+            color: #aaa;
         }
         
-        .beer-style-group {
-            display: flex;
-            align-items: center;
-            font-size: 13px;
-            color: var(--muted-color);
-            font-weight: 300;
-            white-space: nowrap;
-            overflow: hidden;
-            position: relative;
+        .error-message {
+            color: #ff6666;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #331111;
+            border-radius: 5px;
         }
-        
-        .beer-price-group {
-            display: flex;
-            align-items: center;
-            text-align: right;
-        }
-        
-        .beer-abv {
-            font-size: 15px;
-            color: var(--price-color);
-            font-weight: normal;
+
+        .tap-number {
+            color: #D1AF90;
+            font-weight: bold;
+            font-size: 20px;
             margin-right: 10px;
         }
         
-        .price-info {
-            font-size: 15px;
-            color: #ffffff;
-            font-weight: bold;
+        .tap-1 {
+            cursor: pointer;
         }
         
-        .price-separator {
-            font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 15px;
-            color: #D1AF90;
-            margin: 0 2px;
+        .tap-1:hover {
+            color: #ff3333;
         }
         
-        /* Animation for text overflow */
-        @keyframes bounce-text {
-            0% { transform: translateX(0); }
-            15% { transform: translateX(0); }
-            45% { transform: translateX(var(--scroll-distance)); }
-            65% { transform: translateX(var(--scroll-distance)); }
-            95% { transform: translateX(0); }
-            100% { transform: translateX(0); }
+        button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
         }
         
-        .beer-name-inner, .beer-style-inner {
-            display: inline-block;
-            white-space: nowrap;
-        }
-        
-        .animate-text {
-            animation: bounce-text 40s ease-in-out infinite;
-        }
-        
-        @media (max-width: 768px) {
-            .menu-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .beer-number {
-                font-size: 28px;
-            }
-            
-            .beer-name {
-                font-size: 16px;
-            }
-            
-            .beer-style-group, .beer-abv, .price-info {
-                font-size: 14px;
-            }
+        button:hover {
+            background-color: #444;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>FLOATING TAIPEI</h1>
-            <p class="subtitle">精釀啤酒菜單 / CRAFT BEER MENU</p>
-        </header>
+        <h1>Floating Taipei Menu - Debug Mode</h1>
         
-        <div class="menu-grid" id="menu-container">
-            <!-- Menu items will be inserted here by JavaScript -->
+        <button id="test-fetch">Test API Connection</button>
+        <button id="use-fallback">Use Fallback Data</button>
+        
+        <div id="debug-output" class="debug-info">Loading debug information...</div>
+        
+        <div id="menu-container" class="menu-grid">
+            <!-- Beer items will be inserted here -->
         </div>
     </div>
 
     <script>
-        // Sample data based on your Google Sheet and image (fallback data)
-        const fallbackData = [
-            { number: "1", name: "浮光 愉悅柚香小麥 HAPPY YUZU ALE", style: "Wheat Ale", origin: "Taiwan 台灣", abv: "4.5%", price_s: "220", price_l: "250" },
-            { number: "2", name: "蔡氏 祖傳楊桃湯酸酒 STARFRUIT GOSE", style: "Gose", origin: "Taiwan 台灣", abv: "3.6%", price_s: "220", price_l: "250" },
-            { number: "3", name: "55街 桂圓琥珀愛爾 DRIED LONGAN AMBER ALE", style: "Amber Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
-            { number: "4", name: "臺虎TAIHU 生啤酒嗨 DRAFT HIGH LAGER", style: "Lager", origin: "Taiwan 台灣", abv: "5.0%", price_s: "220", price_l: "250" },
-            { number: "5", name: "FAR YEAST源流 TOKYO WHITE 東京白啤酒", style: "Saison", origin: "山梨縣, Japan", abv: "5.0%", price_s: "280", price_l: "320" },
-            { number: "6", name: "臺虎 可可甜心大小姐MISS COCOA 帝國STOUT", style: "Imperial Stout", origin: "Taiwan 台灣", abv: "8.5%", price_s: "250", price_l: "280" },
-            { number: "7", name: "啤酒頭TAIWAN HEAD 洛神酸愛爾 ROSELLE SOUR ALE", style: "Sour Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
-            { number: "8", name: "CORONADO 水世界WATER WORLD WEST COAST DOUBLE IPA", style: "West Coast Double IPA", origin: "California, USA", abv: "8.0%", price_s: "280", price_l: "320" },
-            { number: "9", name: "酉鬼UGLYHALF 就是現在IPA NOW HAZY IPA", style: "Hazy IPA", origin: "Taiwan 台灣", abv: "6.0%", price_s: "250", price_l: "280" },
-            { number: "10", name: "OTHER HALF IDEAL WAVE DDH IPA", style: "DDH IPA", origin: "New York, USA", abv: "6.5%", price_s: "300", price_l: "400" },
-            { number: "11", name: "OTHER HALF SLALOM JUICE DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "12", name: "OTHER HALF OUT FOR TROUT DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "13", name: "GARAGE PROJECT 血鑽石RED DIAMOND WEST COAST RED IPA", style: "West Coast Red IPA", origin: "New Zealand 紐西蘭", abv: "6.4%", price_s: "280", price_l: "320" },
-            { number: "14", name: "OTHER HALF BROCCOLI DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "7.9%", price_s: "300", price_l: "400" },
-            { number: "15", name: "MODERN TIMES 奧德維爾ORDERVILLE HAZY IPA", style: "Hazy IPA", origin: "California, USA", abv: "7.2%", price_s: "280", price_l: "320" },
-            { number: "16", name: "OTHER HALF FOREVER EVER DDH SESSION IPA", style: "DDH Session IPA", origin: "New York, USA", abv: "4.7%", price_s: "300", price_l: "400" },
-            { number: "17", name: "JEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
-            { number: "18", name: "酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
-        ];
+        // Debug info container
+        const debugOutput = document.getElementById('debug-output');
         
         // SheetDB API URL
         const SHEETDB_API = 'https://sheetdb.io/api/v1/necvv0ny8htba';
         
-        // Function to fetch menu data with caching to limit API requests
-        async function fetchMenuData() {
-            try {
-                // Check if localStorage is available
-                let hasLocalStorage = false;
-                try {
-                    localStorage.setItem('test', 'test');
-                    localStorage.removeItem('test');
-                    hasLocalStorage = true;
-                } catch (e) {
-                    console.log('localStorage not available, caching disabled');
-                }
-                
-                // Check if we have cached data and when it was last updated
-                let cachedData = null;
-                let lastUpdated = null;
-                let useCache = false;
-                
-                if (hasLocalStorage) {
-                    cachedData = localStorage.getItem('menuData');
-                    lastUpdated = localStorage.getItem('lastUpdated');
-                    const currentTime = new Date().getTime();
-                    
-                    // Only fetch new data if:
-                    // 1. No cached data exists, OR
-                    // 2. Cached data is older than 24 hours, OR
-                    // 3. The force refresh button was clicked
-                    const cacheExpired = !lastUpdated || (currentTime - parseInt(lastUpdated) > 24 * 60 * 60 * 1000);
-                    useCache = cachedData && !cacheExpired && !window.forceRefresh;
-                }
-                
-                if (!useCache) {
-                    // Reset force refresh flag
-                    window.forceRefresh = false;
-                    
-                    // Check if SheetDB API URL is set to a real value
-                    if (SHEETDB_API && SHEETDB_API !== 'YOUR_SHEETDB_API_URL') {
-                        // Fetch data from SheetDB
-                        const response = await fetch(SHEETDB_API);
-                        
-                        if (!response.ok) {
-                            throw new Error('Failed to fetch data');
-                        }
-                        
-                        const data = await response.json();
-                        
-                        // Save to local storage with timestamp if available
-                        if (hasLocalStorage) {
-                            try {
-                                localStorage.setItem('menuData', JSON.stringify(data));
-                                localStorage.setItem('lastUpdated', new Date().getTime().toString());
-                            } catch (e) {
-                                console.log('Error saving to localStorage', e);
-                            }
-                        }
-                        
-                        return data;
-                    } else {
-                        console.log('SheetDB API URL not configured, using fallback data');
-                        return fallbackData;
-                    }
-                } else {
-                    // Use cached data
-                    console.log('Using cached data from', new Date(parseInt(lastUpdated)).toLocaleString());
-                    return JSON.parse(cachedData);
-                }
-            } catch (error) {
-                console.error('Error fetching menu data:', error);
-                
-                // If we have cached data, use it despite the error
-                try {
-                    const cachedData = localStorage.getItem('menuData');
-                    if (cachedData) {
-                        console.log('Error fetching, using cached data');
-                        return JSON.parse(cachedData);
-                    }
-                } catch (e) {
-                    console.log('No cache available, using fallback');
-                }
-                
-                // Fallback to sample data if all else fails
-                return fallbackData;
+        // Log to both console and debug area
+        function debugLog(message, data) {
+            console.log(message, data);
+            const timestamp = new Date().toLocaleTimeString();
+            
+            if (typeof data === 'object') {
+                debugOutput.textContent += `\n[${timestamp}] ${message}\n${JSON.stringify(data, null, 2)}\n`;
+            } else {
+                debugOutput.textContent += `\n[${timestamp}] ${message} ${data || ''}\n`;
             }
         }
         
-        // Function to add manual refresh button
-        function addRefreshButton() {
-            const container = document.querySelector('.container');
+        // Log errors
+        function debugError(message, error) {
+            console.error(message, error);
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.textContent += `\n[${timestamp}] ERROR: ${message}\n${error}\n`;
             
-            // Create a refresh icon container
-            const refreshContainer = document.createElement('div');
-            refreshContainer.className = 'refresh-container';
-            
-            // Create SVG refresh icon
-            refreshContainer.innerHTML = `
-                <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                </svg>
-            `;
-            
-            // Add event listener
-            refreshContainer.addEventListener('click', function() {
-                // Set flag to force refresh regardless of cache time
-                window.forceRefresh = true;
+            // Also create a visible error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = `Error: ${message} - ${error}`;
+            document.querySelector('.container').insertBefore(errorDiv, document.getElementById('menu-container'));
+        }
+        
+        // Sample fallback data
+        const fallbackData = [
+            { number: "1", name: "浮光 愉悅柚香小麥 HAPPY YUZU ALE", style: "Wheat Ale", origin: "Taiwan 台灣", abv: "4.5%", price_s: "220", price_l: "250" },
+            { number: "2", name: "蔡氏 祖傳楊桃湯酸酒 STARFRUIT GOSE", style: "Gose", origin: "Taiwan 台灣", abv: "3.6%", price_s: "220", price_l: "250" },
+            { number: "3", name: "55街 桂圓琥珀愛爾 DRIED LONGAN AMBER ALE", style: "Amber Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" }
+        ];
+        
+        // Function to fetch data from SheetDB
+        async function fetchFromSheetDB() {
+            try {
+                debugLog('Fetching data from SheetDB:', SHEETDB_API);
                 
-                // Fetch and render menu
-                fetchMenuData().then(data => {
-                    renderBeerMenu(data);
+                const response = await fetch(SHEETDB_API);
+                debugLog('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                debugLog('Received data from SheetDB:', data);
+                
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    throw new Error('Received empty or invalid data from SheetDB');
+                }
+                
+                // Look at the first item to check data structure
+                debugLog('First item structure:', data[0]);
+                
+                // Process data for the menu
+                const processedData = data.map((item, index) => {
+                    return {
+                        number: String(index + 1),
+                        name: item.title || `Beer ${index + 1}`,
+                        style: item.style || 'Unknown Style',
+                        origin: item.from || 'Unknown Origin',
+                        abv: item.abv || '?%',
+                        price_s: item.price_s || '',
+                        price_l: item.price_l || ''
+                    };
                 });
-            });
-            
-            // Add to page
-            container.appendChild(refreshContainer);
+                
+                debugLog('Processed data:', processedData);
+                return processedData;
+            } catch (error) {
+                debugError('Error fetching from SheetDB:', error.message);
+                return null;
+            }
         }
         
-        // Function to check for text overflow and apply animation if needed
-        function checkForTextOverflow() {
-            // Check all beer name elements
-            document.querySelectorAll('.beer-name').forEach(nameElement => {
-                const innerElement = nameElement.querySelector('.beer-name-inner');
-                
-                // If text is wider than container, apply animation
-                if (innerElement.offsetWidth > nameElement.offsetWidth) {
-                    // Calculate how far to scroll (container width - full text width)
-                    const scrollDistance = nameElement.offsetWidth - innerElement.offsetWidth;
-                    // Set the custom property for animation
-                    innerElement.style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    // Add animation class
-                    innerElement.classList.add('animate-text');
-                }
-            });
+        // Function to render the beer menu
+        function renderMenu(beers) {
+            debugLog('Rendering menu with data:', beers);
             
-            // Check all beer style elements
-            document.querySelectorAll('.beer-style-group').forEach(styleElement => {
-                const innerElement = styleElement.querySelector('.beer-style-inner');
-                
-                // If text is wider than container, apply animation
-                if (innerElement.offsetWidth > styleElement.offsetWidth) {
-                    // Calculate how far to scroll (container width - full text width)
-                    const scrollDistance = styleElement.offsetWidth - innerElement.offsetWidth;
-                    // Set the custom property for animation
-                    innerElement.style.setProperty('--scroll-distance', scrollDistance + 'px');
-                    // Add animation class
-                    innerElement.classList.add('animate-text');
-                }
-            });
-        }
-        
-        // Function to render the beer menu 
-        function renderBeerMenu(beers) {
             const menuContainer = document.getElementById('menu-container');
-            
             if (!beers || beers.length === 0) {
-                menuContainer.innerHTML = '<p style="text-align: center; padding: 30px;">No beers available</p>';
+                menuContainer.innerHTML = '<div class="error-message">No beer data available to display</div>';
                 return;
             }
             
-            // Check if we're on mobile
-            const isMobile = window.innerWidth <= 768;
-            
-            if (isMobile) {
-                // For mobile: render all beers in a single column in sequential order
-                let menuHTML = '';
-                beers.forEach(beer => {
-                    menuHTML += '<div class="menu-row">';
-                    menuHTML += generateBeerItem(beer);
-                    menuHTML += '</div>';
-                });
-                menuContainer.innerHTML = menuHTML;
-            } else {
-                // For desktop: arrange in two columns (1-9 left, 10-18 right)
-                const leftColumn = beers.slice(0, 9);  // First 9 items (1-9)
-                const rightColumn = beers.slice(9);    // Remaining items (10-18)
-                
-                let menuHTML = '';
-                
-                // Create rows with left and right items
-                for (let i = 0; i < 9; i++) {
-                    menuHTML += '<div class="menu-row">';
-                    
-                    // Left column item
-                    if (i < leftColumn.length) {
-                        menuHTML += generateBeerItem(leftColumn[i]);
-                    }
-                    
-                    // Right column item
-                    if (i < rightColumn.length) {
-                        menuHTML += generateBeerItem(rightColumn[i]);
-                    }
-                    
-                    menuHTML += '</div>';
-                }
-                
-                menuContainer.innerHTML = menuHTML;
-            }
-            
-            // After rendering, check for text overflow
-            setTimeout(checkForTextOverflow, 100);
-        }
-        
-        // Generate HTML for a single beer item
-        function generateBeerItem(beer) {
-            // Check if both prices are missing
-            const pricesAvailable = beer.price_s && beer.price_l;
-            const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
-            
-            // Add tap-1 class to tap number 1 for the refresh feature
-            const tapClass = beer.number === "1" ? "tap-1" : "";
-            
-            return `
+            const menuHTML = beers.map(beer => `
                 <div class="beer-item">
-                    <div class="beer-content">
-                        <div class="beer-number ${tapClass}" ${beer.number === "1" ? 'id="refresh-trigger"' : ''}>${beer.number}</div>
-                        <div class="beer-name ${titleOpacityClass}">
-                            <span class="beer-name-inner">${beer.name}</span>
-                        </div>
-                        <div class="beer-details-row">
-                            <div class="beer-style-group">
-                                <span class="beer-style-inner">${beer.style} · ${beer.origin}</span>
-                            </div>
-                            <div class="beer-price-group">
-                                <div class="beer-abv">${beer.abv}</div>
-                                <div class="price-info">${beer.price_s || ''}<span class="price-separator">${pricesAvailable ? '/' : ''}</span>${beer.price_l || ''}</div>
-                            </div>
-                        </div>
+                    <div class="beer-header">
+                        <span class="tap-number ${beer.number === '1' ? 'tap-1' : ''}">${beer.number}</span>
+                        <span class="beer-name">${beer.name}</span>
+                    </div>
+                    <div class="beer-style">${beer.style} · ${beer.origin}</div>
+                    <div class="beer-details">
+                        <span>${beer.abv}</span>
+                        <span>${beer.price_s}/${beer.price_l}</span>
                     </div>
                 </div>
-            `;
+            `).join('');
+            
+            menuContainer.innerHTML = menuHTML;
+            debugLog('Menu rendered successfully');
         }
         
-        // Initialize the menu when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Fetch menu data and render
-            fetchMenuData().then(data => {
-                renderBeerMenu(data);
-                
-                // Add event listener to tap number 1 for refresh functionality
-                const refreshTrigger = document.getElementById('refresh-trigger');
-                if (refreshTrigger) {
-                    refreshTrigger.addEventListener('click', function() {
-                        // Set flag to force refresh
-                        window.forceRefresh = true;
-                        
-                        // Fetch and render menu
-                        fetchMenuData().then(data => {
-                            renderBeerMenu(data);
-                            
-                            // Re-add the event listener after refresh
-                            const newRefreshTrigger = document.getElementById('refresh-trigger');
-                            if (newRefreshTrigger) {
-                                newRefreshTrigger.addEventListener('click', arguments.callee);
-                            }
-                        });
-                    });
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            debugLog('Page loaded, starting initialization');
+            
+            // Test fetch button
+            document.getElementById('test-fetch').addEventListener('click', async function() {
+                debugLog('Testing API connection...');
+                const data = await fetchFromSheetDB();
+                if (data) {
+                    renderMenu(data);
                 }
             });
             
-            // Add window resize event listener to handle layout changes
-            window.addEventListener('resize', function() {
-                fetchMenuData().then(data => {
-                    renderBeerMenu(data);
-                    
-                    // Re-add event listener to tap number 1 after resize
-                    const refreshTrigger = document.getElementById('refresh-trigger');
-                    if (refreshTrigger) {
-                        refreshTrigger.addEventListener('click', function() {
-                            window.forceRefresh = true;
-                            fetchMenuData().then(data => {
-                                renderBeerMenu(data);
-                            });
-                        });
-                    }
-                });
+            // Use fallback button
+            document.getElementById('use-fallback').addEventListener('click', function() {
+                debugLog('Using fallback data');
+                renderMenu(fallbackData);
             });
+            
+            // Initial fetch
+            try {
+                debugLog('Performing initial data fetch');
+                const data = await fetchFromSheetDB();
+                if (data) {
+                    renderMenu(data);
+                } else {
+                    debugLog('Initial fetch failed, using fallback data');
+                    renderMenu(fallbackData);
+                }
+            } catch (error) {
+                debugError('Error during initialization:', error.message);
+                renderMenu(fallbackData);
+            }
         });
     </script>
 </body>
