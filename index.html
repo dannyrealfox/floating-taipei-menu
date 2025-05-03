@@ -292,9 +292,14 @@
         // Cookie names
         const LAST_API_CALL_DATE_COOKIE = 'floatingTaipeiLastApiCall';
         const API_CALL_COUNT_COOKIE = 'floatingTaipeiApiCallCount';
-        
-        // Max age for cookies (30 days in seconds)
-        const MAX_COOKIE_AGE = 30 * 24 * 60 * 60;
+        const CACHED_DATA_COOKIE = 'floatingTaipeiCachedData';
+        const LAST_UPDATE_TIMESTAMP_COOKIE = 'floatingTaipeiLastUpdate';
+
+        // IndexedDB storage name
+        const DB_NAME = 'FloatingTaipeiDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'beerData';
+        const DATA_KEY = 'cachedBeerData';
         
         // Sample data for fallback
         const fallbackData = [
@@ -307,8 +312,118 @@
             { number: "7", name: "啤酒頭TAIWAN HEAD 洛神酸愛爾 ROSELLE SOUR ALE", style: "Sour Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
             { number: "8", name: "CORONADO 水世界WATER WORLD WEST COAST DOUBLE IPA", style: "West Coast Double IPA", origin: "California, USA", abv: "8.0%", price_s: "280", price_l: "320" },
             { number: "9", name: "酉鬼UGLYHALF 就是現在IPA NOW HAZY IPA", style: "Hazy IPA", origin: "Taiwan 台灣", abv: "6.0%", price_s: "250", price_l: "280" },
-            // ... rest of the fallback data
+            { number: "10", name: "OTHER HALF IDEAL WAVE DDH IPA", style: "DDH IPA", origin: "New York, USA", abv: "6.5%", price_s: "300", price_l: "400" },
+            { number: "11", name: "OTHER HALF SLALOM JUICE DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
+            { number: "12", name: "OTHER HALF OUT FOR TROUT DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
+            { number: "13", name: "GARAGE PROJECT 血鑽石RED DIAMOND WEST COAST RED IPA", style: "West Coast Red IPA", origin: "New Zealand 紐西蘭", abv: "6.4%", price_s: "280", price_l: "320" },
+            { number: "14", name: "OTHER HALF BROCCOLI DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "7.9%", price_s: "300", price_l: "400" },
+            { number: "15", name: "MODERN TIMES 奧德維爾ORDERVILLE HAZY IPA", style: "Hazy IPA", origin: "California, USA", abv: "7.2%", price_s: "280", price_l: "320" },
+            { number: "16", name: "OTHER HALF FOREVER EVER DDH SESSION IPA", style: "DDH Session IPA", origin: "New York, USA", abv: "4.7%", price_s: "300", price_l: "400" },
+            { number: "17", name: "JEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
+            { number: "18", name: "酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
         ];
+        
+        // Initialize IndexedDB to store beer data
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    log('Your browser doesn\'t support IndexedDB');
+                    resolve(false);
+                    return;
+                }
+                
+                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = function(event) {
+                    log('Error opening IndexedDB:', event);
+                    resolve(false);
+                };
+                
+                request.onsuccess = function(event) {
+                    log('IndexedDB opened successfully');
+                    resolve(true);
+                };
+                
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                        log('Object store created');
+                    }
+                };
+            });
+        }
+        
+        // Save data to IndexedDB
+        function saveToIndexedDB(data, timestamp) {
+            return new Promise((resolve, reject) => {
+                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = function(event) {
+                    log('Error opening IndexedDB:', event);
+                    resolve(false);
+                };
+                
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    
+                    const storeData = {
+                        id: DATA_KEY,
+                        data: data,
+                        timestamp: timestamp
+                    };
+                    
+                    const saveRequest = store.put(storeData);
+                    
+                    saveRequest.onsuccess = function() {
+                        log('Data saved to IndexedDB');
+                        resolve(true);
+                    };
+                    
+                    saveRequest.onerror = function(event) {
+                        log('Error saving to IndexedDB:', event);
+                        resolve(false);
+                    };
+                };
+            });
+        }
+        
+        // Load data from IndexedDB
+        function loadFromIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = function(event) {
+                    log('Error opening IndexedDB:', event);
+                    resolve(null);
+                };
+                
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const transaction = db.transaction([STORE_NAME], 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    
+                    const getRequest = store.get(DATA_KEY);
+                    
+                    getRequest.onsuccess = function() {
+                        if (getRequest.result) {
+                            log('Data loaded from IndexedDB');
+                            resolve(getRequest.result);
+                        } else {
+                            log('No data found in IndexedDB');
+                            resolve(null);
+                        }
+                    };
+                    
+                    getRequest.onerror = function(event) {
+                        log('Error loading from IndexedDB:', event);
+                        resolve(null);
+                    };
+                };
+            });
+        }
         
         // Function to get a cookie
         function getCookie(name) {
@@ -318,8 +433,11 @@
         }
         
         // Function to set a cookie
-        function setCookie(name, value, maxAge = MAX_COOKIE_AGE) {
-            document.cookie = `${name}=${value};path=/;max-age=${maxAge};samesite=strict`;
+        function setCookie(name, value, days = 30) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + d.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
         }
         
         // Function to format a date as a string
@@ -357,7 +475,7 @@
             }
         }
         
-        // Function to fetch data with daily API call limit
+        // Function to fetch data with proper caching
         async function fetchBeerData(forceRefresh = false) {
             try {
                 const now = new Date();
@@ -374,17 +492,54 @@
                 // Check cookies for API call tracking
                 const lastApiCallDate = getCookie(LAST_API_CALL_DATE_COOKIE);
                 const apiCallCount = parseInt(getCookie(API_CALL_COUNT_COOKIE) || '0');
+                const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
                 
-                // If not forcing refresh and we've already called the API today, don't call again
-                if (!forceRefresh && lastApiCallDate === todayStr && apiCallCount > 0) {
-                    log('Already called API today, using fallback data');
-                    updateCacheStatus('Using fallback (API already called today)');
-                    
-                    // If we don't have memory cache, use fallback
-                    if (fallbackData) {
-                        memoryCache.beerData = fallbackData;
-                        return fallbackData;
+                // Try to load data from IndexedDB
+                let dbInitialized = false;
+                try {
+                    dbInitialized = await initIndexedDB();
+                } catch (e) {
+                    log('IndexedDB initialization error:', e);
+                }
+                
+                let cachedData = null;
+                if (dbInitialized) {
+                    try {
+                        const dbData = await loadFromIndexedDB();
+                        if (dbData && dbData.data) {
+                            cachedData = dbData.data;
+                            log('Loaded data from IndexedDB:', cachedData);
+                            
+                            // Update last update timestamp from DB if available
+                            if (dbData.timestamp && !lastUpdateTimestamp) {
+                                updateLastUpdatedIndicator(dbData.timestamp);
+                            }
+                        }
+                    } catch (e) {
+                        log('IndexedDB load error:', e);
                     }
+                }
+                
+                // If not forcing refresh and we've already called the API today, use cached data
+                if (!forceRefresh && lastApiCallDate === todayStr && apiCallCount > 0) {
+                    log('Already called API today, using cached data');
+                    
+                    // If we have cached data from IndexedDB, use it
+                    if (cachedData) {
+                        updateCacheStatus('Using cached data (IndexedDB)');
+                        memoryCache.beerData = cachedData;
+                        
+                        if (lastUpdateTimestamp) {
+                            updateLastUpdatedIndicator(lastUpdateTimestamp);
+                        }
+                        
+                        return cachedData;
+                    }
+                    
+                    // If no cached data, use fallback
+                    updateCacheStatus('Using fallback data (no cached data)');
+                    memoryCache.beerData = fallbackData;
+                    return fallbackData;
                 }
                 
                 // If we're forcing refresh or haven't called API today, make the call
@@ -429,6 +584,16 @@
                 
                 // Update last API call date
                 setCookie(LAST_API_CALL_DATE_COOKIE, todayStr);
+                setCookie(LAST_UPDATE_TIMESTAMP_COOKIE, nowTimestamp.toString());
+                
+                // Save data to IndexedDB
+                if (dbInitialized) {
+                    try {
+                        await saveToIndexedDB(processedData, nowTimestamp);
+                    } catch (e) {
+                        log('IndexedDB save error:', e);
+                    }
+                }
                 
                 // Update last updated timestamp
                 updateLastUpdatedIndicator(nowTimestamp);
@@ -444,6 +609,19 @@
                     log('Using memory cache due to fetch error');
                     updateCacheStatus('Using memory cache (API error)');
                     return memoryCache.beerData;
+                }
+                
+                // Try to load from IndexedDB
+                try {
+                    const dbData = await loadFromIndexedDB();
+                    if (dbData && dbData.data) {
+                        memoryCache.beerData = dbData.data;
+                        updateCacheStatus('Using IndexedDB cache (API error)');
+                        updateLastUpdatedIndicator(dbData.timestamp);
+                        return dbData.data;
+                    }
+                } catch (e) {
+                    log('IndexedDB load error during fetch error handling:', e);
                 }
                 
                 // Otherwise use fallback
@@ -575,6 +753,13 @@
             // Output current cookies for debugging
             log('Last API call date cookie:', getCookie(LAST_API_CALL_DATE_COOKIE));
             log('API call count cookie:', getCookie(API_CALL_COUNT_COOKIE));
+            log('Last update timestamp cookie:', getCookie(LAST_UPDATE_TIMESTAMP_COOKIE));
+            
+            // Check for timestamp and update indicator
+            const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
+            if (lastUpdateTimestamp) {
+                updateLastUpdatedIndicator(lastUpdateTimestamp);
+            }
             
             // Fetch beer data and render menu
             fetchBeerData().then(data => {
@@ -586,6 +771,8 @@
                 if (refreshTrigger) {
                     refreshTrigger.addEventListener('click', function() {
                         log('Refresh triggered by tap #1');
+                        updateCacheStatus('Manual refresh triggered...');
+                        
                         // Force refresh data
                         fetchBeerData(true).then(freshData => {
                             renderBeerMenu(freshData);
@@ -612,6 +799,3 @@
                 }, 200); // Wait 200ms after last resize event
             });
         });
-    </script>
-</body>
-</html>
