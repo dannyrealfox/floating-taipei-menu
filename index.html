@@ -50,6 +50,7 @@
             display: block;
             padding: 0;
             margin-bottom: 16px; /* 1.6x larger */
+            width: 100%; /* Ensure full width */
         }
         
         .beer-content {
@@ -102,12 +103,15 @@
             white-space: nowrap;
             overflow: hidden;
             position: relative;
+            max-width: 60%; /* Limit width to allow space for price */
         }
         
         .beer-price-group {
             display: flex;
             align-items: baseline;
             text-align: right;
+            min-width: fit-content; /* Ensure price doesn't wrap */
+            margin-left: auto; /* Push to the right */
         }
         
         .beer-abv {
@@ -115,12 +119,14 @@
             color: var(--price-color);
             font-weight: normal;
             margin-right: 16px; /* 1.6x larger */
+            white-space: nowrap;
         }
         
         .price-info {
             font-size: 24px; /* 1.6x larger */
             color: #ffffff;
             font-weight: bold;
+            white-space: nowrap;
         }
         
         .price-separator {
@@ -128,6 +134,12 @@
             font-size: 24px; /* 1.6x larger */
             color: #D1AF90;
             margin: 0 3px; /* Slightly increased */
+        }
+        
+        /* Column balancing - ensures equal width columns */
+        .menu-column {
+            width: 100%;
+            box-sizing: border-box;
         }
         
         /* Animation for text overflow */
@@ -177,7 +189,7 @@
             }
             
             .beer-content {
-            gap: 0px 16px; /* Less margins */
+                gap: 0px 16px; /* Less margins */
             }   
 
             .menu-row {
@@ -248,7 +260,7 @@
             color: var(--muted-color);
         }
         
-        /* Cache indicator */
+        /* Cache status */
         .cache-status {
             position: fixed;
             top: 5px;
@@ -257,6 +269,16 @@
             color: var(--muted-color);
             opacity: 0.5;
             z-index: 100;
+        }
+
+        /* Sync status indicator */
+        .sync-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 10px;
+            font-size: 10px;
+            color: var(--muted-color);
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -273,11 +295,19 @@
         
         <div class="last-updated" id="last-updated"></div>
         <div class="cache-status" id="cache-status"></div>
+        <div class="sync-indicator" id="sync-indicator"></div>
     </div>
 
     <script>
-        // SheetDB API URL 
+        // Configuration - Replace this with your actual API
+        const GOOGLE_SHEET_ID = '17cuTSMOwju6LsUU7vff_84frFFwY22lo72xfETv4m1U';
+        const SHEET_RANGE = 'Menu!A2:G100'; // Adjust range as needed
+        
+        // SheetDB API URL (already set up)
         const SHEETDB_API = 'https://sheetdb.io/api/v1/necvv0ny8htba';
+        
+        // Auto-sync interval in milliseconds (5 minutes)
+        const SYNC_INTERVAL = 5 * 60 * 1000;
         
         // Log function for debugging
         function log(message, data) {
@@ -286,7 +316,8 @@
         
         // In-memory cache for session
         let memoryCache = {
-            beerData: null
+            beerData: null,
+            lastSyncTime: null
         };
         
         // Cookie names
@@ -366,30 +397,56 @@
             }
         }
         
-        // Function to save cached beer data to sessionStorage
-        function saveCachedData(data) {
-            try {
-                // Store data in sessionStorage
-                sessionStorage.setItem('beerMenuData', JSON.stringify(data));
-                log('Saved data to sessionStorage');
-                return true;
-            } catch (e) {
-                log('Error saving to sessionStorage:', e);
-                return false;
+        // Function to update sync status indicator
+        function updateSyncStatus(message) {
+            const syncIndicatorElement = document.getElementById('sync-indicator');
+            if (syncIndicatorElement) {
+                syncIndicatorElement.textContent = message;
             }
         }
         
-        // Function to load cached beer data from sessionStorage
+        // Function to save cached beer data to localStorage (persists between sessions)
+        function saveCachedData(data) {
+            try {
+                // Store data in localStorage for persistence
+                localStorage.setItem('beerMenuData', JSON.stringify(data));
+                log('Saved data to localStorage');
+                return true;
+            } catch (e) {
+                log('Error saving to localStorage:', e);
+                
+                // Try sessionStorage as fallback
+                try {
+                    sessionStorage.setItem('beerMenuData', JSON.stringify(data));
+                    log('Saved data to sessionStorage (fallback)');
+                    return true;
+                } catch (err) {
+                    log('Error saving to sessionStorage:', err);
+                    return false;
+                }
+            }
+        }
+        
+        // Function to load cached beer data from storage
         function loadCachedData() {
             try {
-                const cachedData = sessionStorage.getItem('beerMenuData');
+                // Try localStorage first
+                const cachedData = localStorage.getItem('beerMenuData');
                 if (cachedData) {
-                    log('Loaded data from sessionStorage');
+                    log('Loaded data from localStorage');
                     return JSON.parse(cachedData);
                 }
+                
+                // Try sessionStorage as fallback
+                const sessionData = sessionStorage.getItem('beerMenuData');
+                if (sessionData) {
+                    log('Loaded data from sessionStorage');
+                    return JSON.parse(sessionData);
+                }
+                
                 return null;
             } catch (e) {
-                log('Error loading from sessionStorage:', e);
+                log('Error loading from storage:', e);
                 return null;
             }
         }
@@ -413,16 +470,16 @@
                 const apiCallCount = parseInt(getCookie(API_CALL_COUNT_COOKIE) || '0');
                 const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
                 
-                // Try to load data from sessionStorage (persists across page refreshes)
+                // Try to load data from localStorage (persists across browser sessions)
                 let cachedData = loadCachedData();
                 
                 // If not forcing refresh and we've already called the API today, use cached data
                 if (!forceRefresh && lastApiCallDate === todayStr && apiCallCount > 0) {
                     log('Already called API today, using cached data');
                     
-                    // If we have cached data from sessionStorage, use it
+                    // If we have cached data from storage, use it
                     if (cachedData) {
-                        updateCacheStatus('Using cached data (sessionStorage)');
+                        updateCacheStatus('Using cached data (localStorage)');
                         memoryCache.beerData = cachedData;
                         
                         if (lastUpdateTimestamp) {
@@ -468,8 +525,9 @@
                 
                 // Update memory cache
                 memoryCache.beerData = processedData;
+                memoryCache.lastSyncTime = now;
                 
-                // Save to sessionStorage
+                // Save to localStorage for persistence
                 saveCachedData(processedData);
                 
                 // Update cookies for tracking API calls
@@ -488,6 +546,7 @@
                 // Update last updated timestamp
                 updateLastUpdatedIndicator(nowTimestamp);
                 updateCacheStatus('Fresh data from API');
+                updateSyncStatus(`Last sync: ${formatTimestamp(nowTimestamp)} (auto-sync every 5 min)`);
                 
                 return processedData;
             } catch (error) {
@@ -501,16 +560,16 @@
                     return memoryCache.beerData;
                 }
                 
-                // Try to load from sessionStorage
+                // Try to load from localStorage
                 try {
-                    const sessionData = loadCachedData();
-                    if (sessionData) {
-                        memoryCache.beerData = sessionData;
-                        updateCacheStatus('Using sessionStorage cache (API error)');
-                        return sessionData;
+                    const storageData = loadCachedData();
+                    if (storageData) {
+                        memoryCache.beerData = storageData;
+                        updateCacheStatus('Using localStorage cache (API error)');
+                        return storageData;
                     }
                 } catch (e) {
-                    log('sessionStorage load error during fetch error handling:', e);
+                    log('Storage load error during fetch error handling:', e);
                 }
                 
                 // Otherwise use fallback
@@ -569,34 +628,25 @@
                 // For mobile: render all beers in a single column in sequential order
                 let menuHTML = '';
                 beers.forEach(beer => {
-                    menuHTML += '<div class="menu-row">';
                     menuHTML += generateBeerItem(beer);
-                    menuHTML += '</div>';
                 });
                 menuContainer.innerHTML = menuHTML;
             } else {
-                // For desktop: arrange in two columns (1-9 left, 10-18 right)
-                const leftColumn = beers.slice(0, 9);  // First 9 items (1-9)
-                const rightColumn = beers.slice(9);    // Remaining items (10-18)
+                // For desktop: arrange in two balanced columns
+                const leftColumn = beers.slice(0, Math.ceil(beers.length / 2));  // First half
+                const rightColumn = beers.slice(Math.ceil(beers.length / 2));    // Second half
                 
-                let menuHTML = '';
-                
-                // Create rows with left and right items
-                for (let i = 0; i < 9; i++) {
-                    menuHTML += '<div class="menu-row">';
-                    
-                    // Left column item
-                    if (i < leftColumn.length) {
-                        menuHTML += generateBeerItem(leftColumn[i]);
-                    }
-                    
-                    // Right column item
-                    if (i < rightColumn.length) {
-                        menuHTML += generateBeerItem(rightColumn[i]);
-                    }
-                    
-                    menuHTML += '</div>';
-                }
+                // Create the two-column layout
+                let menuHTML = `
+                    <div class="menu-row">
+                        <div class="menu-column">
+                            ${leftColumn.map(beer => generateBeerItem(beer)).join('')}
+                        </div>
+                        <div class="menu-column">
+                            ${rightColumn.map(beer => generateBeerItem(beer)).join('')}
+                        </div>
+                    </div>
+                `;
                 
                 menuContainer.innerHTML = menuHTML;
             }
@@ -635,6 +685,24 @@
             `;
         }
         
+        // Function to periodically sync with the Google Sheet
+        function setupAutoSync() {
+            // Set up interval for auto-syncing
+            setInterval(() => {
+                log('Auto-sync triggered');
+                updateSyncStatus('Auto-sync in progress...');
+                
+                // Force refresh data
+                fetchBeerData(true).then(freshData => {
+                    renderBeerMenu(freshData);
+                    updateSyncStatus(`Last sync: ${formatTimestamp(new Date().getTime())} (auto-sync every 5 min)`);
+                });
+            }, SYNC_INTERVAL);
+            
+            // Initial sync status
+            updateSyncStatus('Auto-sync enabled (every 5 min)');
+        }
+        
         // Initialize the menu when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             log('DOM loaded, initializing menu');
@@ -646,6 +714,7 @@
             
             // Check for timestamp and update indicator
             const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
+            
             if (lastUpdateTimestamp) {
                 updateLastUpdatedIndicator(lastUpdateTimestamp);
             }
@@ -668,6 +737,9 @@
                         });
                     });
                 }
+                
+                // Set up automatic synchronization
+                setupAutoSync();
             });
             
             // Add window resize event listener with debouncing
