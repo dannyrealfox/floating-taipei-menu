@@ -82,6 +82,7 @@
             white-space: nowrap;
             overflow: hidden;
             position: relative;
+            text-transform: uppercase; /* Make all beer names uppercase */
         }
         
         .beer-details-row {
@@ -180,7 +181,11 @@
             }
             
             .beer-number {
-                font-size: 28px;
+                font-size: 24px; /* Smaller font size */
+                width: 20px; /* Smaller width */
+                align-self: flex-start; /* Align at top */
+                line-height: 1; /* Tighter line height */
+                padding-top: 2px; /* Small top padding to align with first line */
             }
             
             .beer-name {
