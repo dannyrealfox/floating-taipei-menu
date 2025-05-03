@@ -31,7 +31,9 @@
         
         .container {
             max-width: 1920px;
+            width: 100%;
             margin: 0 auto;
+            padding: 0 15px; /* Add some padding on the sides */
         }
         
         header {
@@ -40,8 +42,9 @@
         
         /* Menu layout */
         .menu-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            width: 100%;
+            max-width: 100%;
             gap: 20px;
             margin-bottom: 2px;
         }
@@ -141,6 +144,8 @@
         .menu-column {
             width: 100%;
             box-sizing: border-box;
+            flex: 1 1 0;
+            min-width: 0; /* Prevents flex items from overflowing */
         }
         
         /* Animation for text overflow */
@@ -194,7 +199,7 @@
             }   
 
             .menu-row {
-                grid-template-columns: 1fr;
+                flex-direction: column;
             }
             
             .beer-number {
