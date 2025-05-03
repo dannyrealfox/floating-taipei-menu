@@ -694,12 +694,12 @@
             const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
             
             // Add tap-1 class to tap number 1 for the refresh feature
-            //const tapClass = beer.number === "1" ? "tap-1" : "";
+            const tapClass = beer.number === "1" ? "tap-1" : "";
             
             return `
                 <div class="beer-item">
                     <div class="beer-content">
-                        <div class="beer-number>${beer.number}</div>
+                        <div class="beer-number ${tapClass}" ${beer.number === "1" ? 'id="refresh-trigger"' : ''}>${beer.number}</div>
                         <div class="beer-name ${titleOpacityClass}">
                             <span class="beer-name-inner">${beer.name}</span>
                         </div>
