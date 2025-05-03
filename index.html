@@ -229,6 +229,24 @@
                 font-size: 12px;
             }
         }
+        
+        /* Last updated indicator */
+        .last-updated {
+            position: fixed;
+            bottom: 5px;
+            right: 10px;
+            font-size: 10px;
+            color: var(--muted-color);
+            opacity: 0.5;
+        }
+        
+        /* Add loading indicator */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            color: var(--muted-color);
+        }
     </style>
 </head>
 <body>
@@ -239,8 +257,10 @@
         </header>
         
         <div class="menu-grid" id="menu-container">
-            <!-- Beer items will load here -->
+            <div class="loading">Loading menu...</div>
         </div>
+        
+        <div class="last-updated" id="last-updated"></div>
     </div>
 
     <script>
@@ -251,6 +271,13 @@
         function log(message, data) {
             console.log(message, data);
         }
+        
+        // Variables to cache the data in memory (since localStorage isn't available)
+        let cachedBeerData = null;
+        let lastFetchTimestamp = null;
+        
+        // Maximum time before refetching (24 hours in milliseconds)
+        const MAX_CACHE_AGE = 24 * 60 * 60 * 1000;
         
         // Sample data for fallback
         const fallbackData = [
@@ -274,9 +301,37 @@
             { number: "18", name: "酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
         ];
         
-        // Function to fetch data from SheetDB
-        async function fetchBeerData() {
+        // Function to format a date as a friendly string
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+        
+        // Function to update the last updated indicator
+        function updateLastUpdatedIndicator(timestamp) {
+            const lastUpdatedElement = document.getElementById('last-updated');
+            if (lastUpdatedElement && timestamp) {
+                lastUpdatedElement.textContent = `Last updated: ${formatDate(timestamp)}`;
+            }
+        }
+        
+        // Function to fetch data from SheetDB with in-memory caching
+        async function fetchBeerData(forceRefresh = false) {
             try {
+                const now = new Date().getTime();
+                
+                // Check if we have cached data and it's not expired
+                if (!forceRefresh && cachedBeerData && lastFetchTimestamp) {
+                    // Check if cache is still valid (less than 24 hours old)
+                    if (now - lastFetchTimestamp < MAX_CACHE_AGE) {
+                        log('Using cached data');
+                        return cachedBeerData;
+                    } else {
+                        log('Cache expired, fetching fresh data');
+                    }
+                }
+                
+                // If we reach here, we need to fetch fresh data
                 log('Fetching data from SheetDB');
                 const response = await fetch(SHEETDB_API);
                 
@@ -301,10 +356,24 @@
                 });
                 
                 log('Processed data:', processedData);
+                
+                // Store in memory cache
+                cachedBeerData = processedData;
+                lastFetchTimestamp = now;
+                updateLastUpdatedIndicator(now);
+                
                 return processedData;
             } catch (error) {
                 log('Error fetching data:', error);
                 console.error('Error fetching data:', error);
+                
+                // Try to use cached data even if expired
+                if (cachedBeerData) {
+                    log('Using expired cached data due to fetch error');
+                    return cachedBeerData;
+                }
+                
+                // If no cached data, use fallback
                 return fallbackData;
             }
         }
@@ -429,33 +498,45 @@
         document.addEventListener('DOMContentLoaded', function() {
             log('DOM loaded, initializing menu');
             
-            // Set global variable for refresh
-            window.forceRefresh = false;
+            // Set to track which page loads we've already made API calls for
+            const pageLoadId = Date.now();
+            window.lastPageLoadId = pageLoadId;
             
             // Fetch beer data and render menu
             fetchBeerData().then(data => {
-                // Render the menu with the data
-                renderBeerMenu(data);
-                
-                // Add event listener to tap number 1 for refresh functionality
-                const refreshTrigger = document.getElementById('refresh-trigger');
-                if (refreshTrigger) {
-                    refreshTrigger.addEventListener('click', function() {
-                        log('Refresh triggered by tap #1');
-                        // Fetch fresh data
-                        fetchBeerData().then(freshData => {
-                            renderBeerMenu(freshData);
+                // Only update the UI if this is still the most recent page load
+                if (window.lastPageLoadId === pageLoadId) {
+                    // Render the menu with the data
+                    renderBeerMenu(data);
+                    
+                    // Add event listener to tap number 1 for refresh functionality
+                    const refreshTrigger = document.getElementById('refresh-trigger');
+                    if (refreshTrigger) {
+                        refreshTrigger.addEventListener('click', function() {
+                            log('Refresh triggered by tap #1');
+                            // Force refresh data
+                            fetchBeerData(true).then(freshData => {
+                                renderBeerMenu(freshData);
+                            });
                         });
-                    });
+                    }
                 }
             });
             
-            // Add window resize event listener to handle layout changes
+            // Add window resize event listener to handle layout changes,
+            // but don't fetch new data, just re-render with existing data
+            let resizeTimeout;
             window.addEventListener('resize', function() {
-                log('Window resized, re-rendering menu');
-                fetchBeerData().then(data => {
-                    renderBeerMenu(data);
-                });
+                // Clear any existing timeout to debounce the resize event
+                clearTimeout(resizeTimeout);
+                
+                // Set a new timeout to wait for resize to finish
+                resizeTimeout = setTimeout(function() {
+                    log('Window resized, re-rendering menu with cached data');
+                    if (cachedBeerData) {
+                        renderBeerMenu(cachedBeerData);
+                    }
+                }, 200); // Wait 200ms after last resize event
             });
         });
     </script>
