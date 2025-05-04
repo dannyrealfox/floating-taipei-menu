@@ -13,7 +13,7 @@
             --text-color: #ffffff;
             --muted-color: #A7A1A1;
             --number-color: #D1AF90;
-            --price-color: #D1AF90;
+            --price-color: #DACDC0;
         }
         
         * {
@@ -23,11 +23,11 @@
         }
         
         body {
-            font-family: 'Noto Sans', sans-serif;
+            font-family: 'Noto Sans TC', sans-serif;
             background-color: var(--background-color);
             color: var(--text-color);
             line-height: 1.3;
-            padding: 10px;
+            padding: 100px; /* Fit Projector */
         }
         
         .container {
@@ -46,14 +46,14 @@
             display: flex;
             width: 100%;
             max-width: 100%;
-            gap: 20px;
+            gap: 40px;
             margin-bottom: 2px;
         }
         
         .beer-item {
             display: block;
             padding: 0;
-            margin-bottom: 16px; /* 1.6x larger */
+            margin-bottom: 38px;
             width: 100%; /* Ensure full width */
         }
         
@@ -61,25 +61,26 @@
             display: grid;
             grid-template-columns: auto 1fr;
             grid-template-rows: auto auto;
-            gap: 0px 24px; /* 1.6x larger */
+            gap: 0px 30px;
         }
         
         /* Beer elements styling */
         .beer-number {
             font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 48px; /* 1.6x larger */
+            font-size: 40px;
             font-weight: normal;
             color: var(--number-color);
             grid-row: 1 / span 2;
             align-self: center;
-            width: 64px; /* 1.6x larger */
+            width: 24px;
             text-align: right;
             letter-spacing: -0.2em;
         }
         
         .beer-name {
             font-size: 24px;
-            font-weight: 500;
+            font-weight: 400;
+            /* letter-spacing: -0.02em; */
             grid-column: 2;
             grid-row: 1;
             width: 100%;
@@ -101,7 +102,7 @@
         .beer-style-group {
             display: flex;
             align-items: center;
-            font-size: 20px;
+            font-size: 23px;
             color: var(--muted-color);
             font-weight: 300;
             white-space: nowrap;
@@ -119,7 +120,7 @@
         }
         
         .beer-abv {
-            font-size: 20px;
+            font-size: 23px;
             color: var(--price-color);
             font-weight: normal;
             margin-right: 10px;
@@ -127,7 +128,7 @@
         }
         
         .price-info {
-            font-size: 22px;
+            font-size: 24px;
             color: #ffffff;
             font-weight: 500;
             white-space: nowrap;
@@ -135,9 +136,9 @@
         
         .price-separator {
             font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 20px;
+            font-size: 16px;
             color: #D1AF90;
-            font-weight:400;
+            font-weight:300;
             margin: 0 3px; /* Slightly increased */
         }
         
