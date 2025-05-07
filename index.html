@@ -324,6 +324,7 @@
             color: var(--muted-color);
             opacity: 0;
             z-index: 100;
+            transition: opacity 0.3s ease; /* Add smooth transition */
         }
 
         /* Sync status indicator */
@@ -334,6 +335,7 @@
             font-size: 10px;
             color: var(--muted-color);
             opacity: 0;
+            transition: opacity 0.3s ease; /* Add smooth transition */
         }
     </style>
 </head>
@@ -355,13 +357,8 @@
     </div>
 
     <script>
-        // Configuration - Google Sheet Information
-        const GOOGLE_SHEET_ID = '17cuTSMOwju6LsUU7vff_84frFFwY22lo72xfETv4m1U';
-        const SHEET_NAME = 'Menu';
-        
-        // 不使用 API 金鑰，改用直接公開分享的試算表
-        // 確保您的 Google 試算表已設為「任何人都可以查看」或「任何有連結的人都可以查看」
-        const USE_PUBLIC_SHEET = true;
+        // Configuration - Google Apps Script WebApp URL
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzT3Wp5ydCCvISPKThyEybiiU88MSUSKkTX4TDNDGnwpp48FfskKM_APPuAlxPuyTgk/exec';
         
         // Daily sync check instead of every 5 minutes
         const DAILY_SYNC_CHECK = true;
@@ -451,13 +448,11 @@
             const cacheStatusElement = document.getElementById('cache-status');
             if (cacheStatusElement) {
                 cacheStatusElement.textContent = message;
-                
-                // Make it visible temporarily
-                cacheStatusElement.style.opacity = 0.5;
-                
-                // Hide it after a few seconds
+                // Make the element temporarily visible 
+                cacheStatusElement.style.opacity = '0.8';
+                // Hide it after 3 seconds
                 setTimeout(() => {
-                    cacheStatusElement.style.opacity = 0;
+                    cacheStatusElement.style.opacity = '0';
                 }, 3000);
             }
         }
@@ -467,13 +462,11 @@
             const syncIndicatorElement = document.getElementById('sync-indicator');
             if (syncIndicatorElement) {
                 syncIndicatorElement.textContent = message;
-                
-                // Make it visible temporarily
-                syncIndicatorElement.style.opacity = 0.5;
-                
-                // Hide it after a few seconds
+                // Make the element temporarily visible 
+                syncIndicatorElement.style.opacity = '0.8';
+                // Hide it after 5 seconds
                 setTimeout(() => {
-                    syncIndicatorElement.style.opacity = 0;
+                    syncIndicatorElement.style.opacity = '0';
                 }, 5000);
             }
         }
@@ -524,22 +517,8 @@
             }
         }
         
-        // Function to fetch data from Google Sheets API with proper caching
+        // Function to fetch data from Google Apps Script with proper caching
         async function fetchBeerData(forceRefresh = false) {
-            // 在一開始就先嘗試從本地存儲加載數據，避免不必要的 API 調用
-            const cachedData = loadCachedData();
-            if (!forceRefresh && cachedData) {
-                log('Using cached data from localStorage');
-                memoryCache.beerData = cachedData;
-                
-                // 更新顯示
-                const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
-                if (lastUpdateTimestamp) {
-                    updateLastUpdatedIndicator(lastUpdateTimestamp);
-                }
-                
-                return cachedData;
-            }
             try {
                 const now = new Date();
                 const todayStr = formatDate(now);
@@ -583,19 +562,15 @@
                 }
                 
                 // If we're forcing refresh or haven't called API today, make the call
-                log('Fetching data from Google Sheets API');
-                updateCacheStatus('Fetching from Google Sheets API...');
+                log('Fetching data from Google Apps Script');
+                updateCacheStatus('Fetching from API...');
+                updateSyncStatus('Sync in progress...');
                 
-                // Google Sheets API URL
-                // 使用正確的範圍格式，確保指定工作表名稱
-                const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${SHEET_NAME}!A2:G100?key=${API_KEY}&valueRenderOption=FORMATTED_VALUE`;
-                
-                console.log('API URL:', apiUrl); // 用於調試
-                
-                const response = await fetch(apiUrl, {
+                // Call the Google Apps Script Web App
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'GET',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
                     }
                 });
                 
@@ -604,29 +579,20 @@
                 }
                 
                 const data = await response.json();
-                log('Google Sheets API data received:', data);
-                
-                // 檢查 API 回應是否包含數據
-                if (!data.values || !Array.isArray(data.values) || data.values.length === 0) {
-                    console.error('API 回應中沒有有效的數據', data);
-                    throw new Error('API 回應中沒有有效的數據');
-                }
+                log('Google Apps Script data received:', data);
                 
                 // Process the data for our menu format
-                const processedData = data.values.map((row, index) => {
-                    // Handle empty rows or partially filled rows
-                    if (!row || row.length === 0) return null;
-                    
+                const processedData = data.map((item, index) => {
                     return {
                         number: String(index + 1),
-                        name: row[0] || 'Unnamed Beer',
-                        style: row[1] || '',
-                        origin: row[2] || '',
-                        abv: row[3] || '',
-                        price_s: row[4] || '',
-                        price_l: row[5] || ''
+                        name: item.title || 'Unnamed Beer',
+                        style: item.style || '',
+                        origin: item.from || '',
+                        abv: item.abv || '',
+                        price_s: item.price_s || '',
+                        price_l: item.price_l || ''
                     };
-                }).filter(item => item !== null); // Remove null entries
+                });
                 
                 log('Processed data:', processedData);
                 
@@ -652,8 +618,8 @@
                 
                 // Update last updated timestamp
                 updateLastUpdatedIndicator(nowTimestamp);
-                updateCacheStatus('Fresh data from Google Sheets API');
-                updateSyncStatus(`Last sync: ${formatTimestamp(nowTimestamp)} (auto-sync daily)`);
+                updateCacheStatus('Fresh data from API');
+                updateSyncStatus(`Last sync: ${formatTimestamp(nowTimestamp)}`);
                 
                 return processedData;
             } catch (error) {
