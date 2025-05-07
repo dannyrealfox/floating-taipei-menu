@@ -578,17 +578,35 @@
                     throw new Error(`HTTP error: ${response.status}`);
                 }
                 
+                // Parse the response data
                 const data = await response.json();
                 log('Google Apps Script data received:', data);
                 
-                // Process the data for our menu format
-                const processedData = data.map((item, index) => {
+                // Extract the items array from the response
+                // This is specific to your Google Apps Script response format
+                if (!data || !data.items || !Array.isArray(data.items)) {
+                    log('Expected items array not found in response');
+                    updateCacheStatus('Invalid data format from API, using fallback');
+                    memoryCache.beerData = fallbackData;
+                    return fallbackData;
+                }
+                
+                // Process the beer array from the items property
+                const beerArray = data.items;
+                
+                // Use each beer's tap number as its display number
+                const processedData = beerArray.map(item => {
+                    // For ABV, convert from decimal to percentage string
+                    const abvValue = typeof item.abv === 'number' ? 
+                        (item.abv * 100).toFixed(1) + '%' : 
+                        (item.abv || '');
+                    
                     return {
-                        number: String(index + 1),
-                        name: item.title || 'Unnamed Beer',
+                        number: String(item.tap || ''),
+                        name: item.title || '',
                         style: item.style || '',
                         origin: item.from || '',
-                        abv: item.abv || '',
+                        abv: abvValue,
                         price_s: item.price_s || '',
                         price_l: item.price_l || ''
                     };
