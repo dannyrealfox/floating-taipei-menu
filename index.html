@@ -358,7 +358,10 @@
         // Configuration - Google Sheet Information
         const GOOGLE_SHEET_ID = '17cuTSMOwju6LsUU7vff_84frFFwY22lo72xfETv4m1U';
         const SHEET_NAME = 'Menu';
-        const API_KEY = 'AIzaSyCJBgYZWOW1nX3TIFw6V_flxzfkpAZ6BiA'; // Replace with your Google API key
+        
+        // 不使用 API 金鑰，改用直接公開分享的試算表
+        // 確保您的 Google 試算表已設為「任何人都可以查看」或「任何有連結的人都可以查看」
+        const USE_PUBLIC_SHEET = true;
         
         // Daily sync check instead of every 5 minutes
         const DAILY_SYNC_CHECK = true;
@@ -523,6 +526,20 @@
         
         // Function to fetch data from Google Sheets API with proper caching
         async function fetchBeerData(forceRefresh = false) {
+            // 在一開始就先嘗試從本地存儲加載數據，避免不必要的 API 調用
+            const cachedData = loadCachedData();
+            if (!forceRefresh && cachedData) {
+                log('Using cached data from localStorage');
+                memoryCache.beerData = cachedData;
+                
+                // 更新顯示
+                const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
+                if (lastUpdateTimestamp) {
+                    updateLastUpdatedIndicator(lastUpdateTimestamp);
+                }
+                
+                return cachedData;
+            }
             try {
                 const now = new Date();
                 const todayStr = formatDate(now);
@@ -570,9 +587,17 @@
                 updateCacheStatus('Fetching from Google Sheets API...');
                 
                 // Google Sheets API URL
-                const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${SHEET_NAME}!A2:G100?key=${API_KEY}`;
+                // 使用正確的範圍格式，確保指定工作表名稱
+                const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${SHEET_NAME}!A2:G100?key=${API_KEY}&valueRenderOption=FORMATTED_VALUE`;
                 
-                const response = await fetch(apiUrl);
+                console.log('API URL:', apiUrl); // 用於調試
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error: ${response.status}`);
@@ -580,6 +605,12 @@
                 
                 const data = await response.json();
                 log('Google Sheets API data received:', data);
+                
+                // 檢查 API 回應是否包含數據
+                if (!data.values || !Array.isArray(data.values) || data.values.length === 0) {
+                    console.error('API 回應中沒有有效的數據', data);
+                    throw new Error('API 回應中沒有有效的數據');
+                }
                 
                 // Process the data for our menu format
                 const processedData = data.values.map((row, index) => {
