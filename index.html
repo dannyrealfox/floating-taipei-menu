@@ -108,7 +108,7 @@
             white-space: nowrap;
             overflow: hidden;
             position: relative;
-            max-width: 75%; /* Limit width to allow space for price */
+            max-width: 60%; /* Limit width to allow space for price */
         }
         
         .beer-price-group {
@@ -200,7 +200,7 @@
             
             .beer-style-group {
                 font-size: 12px; /* 60% of 20px */
-                max-width: 65%;
+                max-width: 80px;
             }
             
             .beer-abv {
@@ -387,24 +387,24 @@
         
         // Sample data for fallback
         const fallbackData = [
-            { number: "1", name: "F浮光 愉悅柚香小麥 HAPPY YUZU ALE", style: "Wheat Ale", origin: "Taiwan 台灣", abv: "4.5%", price_s: "220", price_l: "250" },
-            { number: "2", name: "F蔡氏 祖傳楊桃湯酸酒 STARFRUIT GOSE", style: "Gose", origin: "Taiwan 台灣", abv: "3.6%", price_s: "220", price_l: "250" },
-            { number: "3", name: "F55街 桂圓琥珀愛爾 DRIED LONGAN AMBER ALE", style: "Amber Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
-            { number: "4", name: "F臺虎TAIHU 生啤酒嗨 DRAFT HIGH LAGER", style: "Lager", origin: "Taiwan 台灣", abv: "5.0%", price_s: "220", price_l: "250" },
-            { number: "5", name: "FFAR YEAST源流 TOKYO WHITE 東京白啤酒", style: "Saison", origin: "山梨縣, Japan", abv: "5.0%", price_s: "280", price_l: "320" },
-            { number: "6", name: "F臺虎 可可甜心大小姐MISS COCOA 帝國STOUT", style: "Imperial Stout", origin: "Taiwan 台灣", abv: "8.5%", price_s: "250", price_l: "280" },
-            { number: "7", name: "F啤酒頭TAIWAN HEAD 洛神酸愛爾 ROSELLE SOUR ALE", style: "Sour Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
-            { number: "8", name: "FCORONADO 水世界WATER WORLD WEST COAST DOUBLE IPA", style: "West Coast Double IPA", origin: "California, USA", abv: "8.0%", price_s: "280", price_l: "320" },
-            { number: "9", name: "F酉鬼UGLYHALF 就是現在IPA NOW HAZY IPA", style: "Hazy IPA", origin: "Taiwan 台灣", abv: "6.0%", price_s: "250", price_l: "280" },
-            { number: "10", name: "FOTHER HALF IDEAL WAVE DDH IPA", style: "DDH IPA", origin: "New York, USA", abv: "6.5%", price_s: "300", price_l: "400" },
-            { number: "11", name: "FOTHER HALF SLALOM JUICE DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "12", name: "FOTHER HALF OUT FOR TROUT DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "13", name: "FGARAGE PROJECT 血鑽石RED DIAMOND WEST COAST RED IPA", style: "West Coast Red IPA", origin: "New Zealand 紐西蘭", abv: "6.4%", price_s: "280", price_l: "320" },
-            { number: "14", name: "FOTHER HALF BROCCOLI DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "7.9%", price_s: "300", price_l: "400" },
-            { number: "15", name: "FMODERN TIMES 奧德維爾ORDERVILLE HAZY IPA", style: "Hazy IPA", origin: "California, USA", abv: "7.2%", price_s: "280", price_l: "320" },
-            { number: "16", name: "FOTHER HALF FOREVER EVER DDH SESSION IPA", style: "DDH Session IPA", origin: "New York, USA", abv: "4.7%", price_s: "300", price_l: "400" },
-            { number: "17", name: "FJEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
-            { number: "18", name: "F酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
+            { number: "1", name: "浮光 愉悅柚香小麥 HAPPY YUZU ALE", style: "Wheat Ale", origin: "Taiwan 台灣", abv: "4.5%", price_s: "220", price_l: "250" },
+            { number: "2", name: "蔡氏 祖傳楊桃湯酸酒 STARFRUIT GOSE", style: "Gose", origin: "Taiwan 台灣", abv: "3.6%", price_s: "220", price_l: "250" },
+            { number: "3", name: "55街 桂圓琥珀愛爾 DRIED LONGAN AMBER ALE", style: "Amber Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
+            { number: "4", name: "臺虎TAIHU 生啤酒嗨 DRAFT HIGH LAGER", style: "Lager", origin: "Taiwan 台灣", abv: "5.0%", price_s: "220", price_l: "250" },
+            { number: "5", name: "FAR YEAST源流 TOKYO WHITE 東京白啤酒", style: "Saison", origin: "山梨縣, Japan", abv: "5.0%", price_s: "280", price_l: "320" },
+            { number: "6", name: "臺虎 可可甜心大小姐MISS COCOA 帝國STOUT", style: "Imperial Stout", origin: "Taiwan 台灣", abv: "8.5%", price_s: "250", price_l: "280" },
+            { number: "7", name: "啤酒頭TAIWAN HEAD 洛神酸愛爾 ROSELLE SOUR ALE", style: "Sour Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
+            { number: "8", name: "CORONADO 水世界WATER WORLD WEST COAST DOUBLE IPA", style: "West Coast Double IPA", origin: "California, USA", abv: "8.0%", price_s: "280", price_l: "320" },
+            { number: "9", name: "酉鬼UGLYHALF 就是現在IPA NOW HAZY IPA", style: "Hazy IPA", origin: "Taiwan 台灣", abv: "6.0%", price_s: "250", price_l: "280" },
+            { number: "10", name: "OTHER HALF IDEAL WAVE DDH IPA", style: "DDH IPA", origin: "New York, USA", abv: "6.5%", price_s: "300", price_l: "400" },
+            { number: "11", name: "OTHER HALF SLALOM JUICE DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
+            { number: "12", name: "OTHER HALF OUT FOR TROUT DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
+            { number: "13", name: "GARAGE PROJECT 血鑽石RED DIAMOND WEST COAST RED IPA", style: "West Coast Red IPA", origin: "New Zealand 紐西蘭", abv: "6.4%", price_s: "280", price_l: "320" },
+            { number: "14", name: "OTHER HALF BROCCOLI DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "7.9%", price_s: "300", price_l: "400" },
+            { number: "15", name: "MODERN TIMES 奧德維爾ORDERVILLE HAZY IPA", style: "Hazy IPA", origin: "California, USA", abv: "7.2%", price_s: "280", price_l: "320" },
+            { number: "16", name: "OTHER HALF FOREVER EVER DDH SESSION IPA", style: "DDH Session IPA", origin: "New York, USA", abv: "4.7%", price_s: "300", price_l: "400" },
+            { number: "17", name: "JEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
+            { number: "18", name: "酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
         ];
         
         // Function to get a cookie
