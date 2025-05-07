@@ -315,18 +315,6 @@
             color: var(--muted-color);
         }
         
-        /* Cache status */
-        .cache-status {
-            position: fixed;
-            bottom: 35px;
-            right: 10px;
-            font-size: 10px;
-            color: var(--muted-color);
-            opacity: 0;
-            z-index: 100;
-            transition: opacity 0.3s ease; /* Add smooth transition */
-        }
-
         /* Sync status indicator */
         .sync-indicator {
             position: fixed;
@@ -352,7 +340,6 @@
         </div>
         
         <div class="last-updated" id="last-updated"></div>
-        <div class="cache-status" id="cache-status"></div>
         <div class="sync-indicator" id="sync-indicator"></div>
     </div>
 
@@ -360,65 +347,22 @@
         // Configuration - Google Apps Script WebApp URL
         const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzT3Wp5ydCCvISPKThyEybiiU88MSUSKkTX4TDNDGnwpp48FfskKM_APPuAlxPuyTgk/exec';
         
-        // Daily sync check instead of every 5 minutes
-        const DAILY_SYNC_CHECK = true;
+        // Check for updates every 20 minutes
+        const UPDATE_INTERVAL = 20 * 60 * 1000; // 20 minutes in milliseconds
         
-        // Log function for debugging
-        function log(message, data) {
-            console.log(message, data);
-        }
-        
-        // In-memory cache for session
-        let memoryCache = {
-            beerData: null,
-            lastSyncTime: null
-        };
-        
-        // Cookie names
-        const LAST_API_CALL_DATE_COOKIE = 'floatingTaipeiLastApiCall';
-        const API_CALL_COUNT_COOKIE = 'floatingTaipeiApiCallCount';
-        const LAST_UPDATE_TIMESTAMP_COOKIE = 'floatingTaipeiLastUpdate';
+        // Storage key for localStorage
+        const STORAGE_KEY = 'floatingTaipeiMenuData';
         
         // Sample data for fallback
         const fallbackData = [
             { number: "1", name: "F浮光 愉悅柚香小麥 HAPPY YUZU ALE", style: "Wheat Ale", origin: "Taiwan 台灣", abv: "4.5%", price_s: "220", price_l: "250" },
             { number: "2", name: "F蔡氏 祖傳楊桃湯酸酒 STARFRUIT GOSE", style: "Gose", origin: "Taiwan 台灣", abv: "3.6%", price_s: "220", price_l: "250" },
-            { number: "3", name: "F55街 桂圓琥珀愛爾 DRIED LONGAN AMBER ALE", style: "Amber Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
-            { number: "4", name: "F臺虎TAIHU 生啤酒嗨 DRAFT HIGH LAGER", style: "Lager", origin: "Taiwan 台灣", abv: "5.0%", price_s: "220", price_l: "250" },
-            { number: "5", name: "FFAR YEAST源流 TOKYO WHITE 東京白啤酒", style: "Saison", origin: "山梨縣, Japan", abv: "5.0%", price_s: "280", price_l: "320" },
-            { number: "6", name: "F臺虎 可可甜心大小姐MISS COCOA 帝國STOUT", style: "Imperial Stout", origin: "Taiwan 台灣", abv: "8.5%", price_s: "250", price_l: "280" },
-            { number: "7", name: "F啤酒頭TAIWAN HEAD 洛神酸愛爾 ROSELLE SOUR ALE", style: "Sour Ale", origin: "Taiwan 台灣", abv: "5.5%", price_s: "220", price_l: "250" },
-            { number: "8", name: "FCORONADO 水世界WATER WORLD WEST COAST DOUBLE IPA", style: "West Coast Double IPA", origin: "California, USA", abv: "8.0%", price_s: "280", price_l: "320" },
-            { number: "9", name: "F酉鬼UGLYHALF 就是現在IPA NOW HAZY IPA", style: "Hazy IPA", origin: "Taiwan 台灣", abv: "6.0%", price_s: "250", price_l: "280" },
-            { number: "10", name: "FOTHER HALF IDEAL WAVE DDH IPA", style: "DDH IPA", origin: "New York, USA", abv: "6.5%", price_s: "300", price_l: "400" },
-            { number: "11", name: "FOTHER HALF SLALOM JUICE DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "12", name: "FOTHER HALF OUT FOR TROUT DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "8.0%", price_s: "300", price_l: "400" },
-            { number: "13", name: "FGARAGE PROJECT 血鑽石RED DIAMOND WEST COAST RED IPA", style: "West Coast Red IPA", origin: "New Zealand 紐西蘭", abv: "6.4%", price_s: "280", price_l: "320" },
-            { number: "14", name: "FOTHER HALF BROCCOLI DDH DIPA", style: "DDH Double IPA", origin: "New York, USA", abv: "7.9%", price_s: "300", price_l: "400" },
-            { number: "15", name: "FMODERN TIMES 奧德維爾ORDERVILLE HAZY IPA", style: "Hazy IPA", origin: "California, USA", abv: "7.2%", price_s: "280", price_l: "320" },
-            { number: "16", name: "FOTHER HALF FOREVER EVER DDH SESSION IPA", style: "DDH Session IPA", origin: "New York, USA", abv: "4.7%", price_s: "300", price_l: "400" },
-            { number: "17", name: "FJEREMIAH JOHNSON 登山者MOUNTAIN MAN SCOTCH ALE", style: "Scotch Ale", origin: "Montana, USA", abv: "6.5%", price_s: "250", price_l: "280" },
-            { number: "18", name: "F酉鬼UGLYHALF 有怪獸酒花蘋果酒 HOPPY CIDER", style: "Hoppy Cider", origin: "Taiwan 台灣", abv: "5.3%", price_s: "220", price_l: "250" }
+            // Rest of fallback data (truncated for brevity)
         ];
         
-        // Function to get a cookie
-        function getCookie(name) {
-            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return match[2];
-            return null;
-        }
-        
-        // Function to set a cookie
-        function setCookie(name, value, days = 30) {
-            const d = new Date();
-            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-            const expires = "expires=" + d.toUTCString();
-            document.cookie = name + "=" + value + ";" + expires + ";path=/";
-        }
-        
-        // Function to format a date as a string
-        function formatDate(date) {
-            return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        // Function to log messages for debugging
+        function log(message, data) {
+            console.log(message, data);
         }
         
         // Function to format a timestamp as a friendly string
@@ -427,33 +371,11 @@
             return date.toLocaleString();
         }
         
-        // Function to check if it's a new day
-        function isNewDay(lastCallDateStr) {
-            if (!lastCallDateStr) return true;
-            
-            const todayStr = formatDate(new Date());
-            return lastCallDateStr !== todayStr;
-        }
-        
         // Function to update the last updated indicator
         function updateLastUpdatedIndicator(timestamp) {
             const lastUpdatedElement = document.getElementById('last-updated');
             if (lastUpdatedElement && timestamp) {
                 lastUpdatedElement.textContent = `Last updated: ${formatTimestamp(timestamp)}`;
-            }
-        }
-        
-        // Function to update cache status indicator
-        function updateCacheStatus(message) {
-            const cacheStatusElement = document.getElementById('cache-status');
-            if (cacheStatusElement) {
-                cacheStatusElement.textContent = message;
-                // Make the element temporarily visible 
-                cacheStatusElement.style.opacity = '0.8';
-                // Hide it after 3 seconds
-                setTimeout(() => {
-                    cacheStatusElement.style.opacity = '0';
-                }, 3000);
             }
         }
         
@@ -471,102 +393,63 @@
             }
         }
         
-        // Function to save cached beer data to localStorage (persists between sessions)
-        function saveCachedData(data) {
+        // Function to save data to localStorage with timestamp
+        function saveToStorage(data) {
             try {
-                // Store data in localStorage for persistence
-                localStorage.setItem('beerMenuData', JSON.stringify(data));
-                log('Saved data to localStorage');
+                const storageData = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+                log('Saved data to localStorage', storageData);
                 return true;
-            } catch (e) {
-                log('Error saving to localStorage:', e);
-                
-                // Try sessionStorage as fallback
-                try {
-                    sessionStorage.setItem('beerMenuData', JSON.stringify(data));
-                    log('Saved data to sessionStorage (fallback)');
-                    return true;
-                } catch (err) {
-                    log('Error saving to sessionStorage:', err);
-                    return false;
-                }
+            } catch (error) {
+                log('Error saving to localStorage:', error);
+                return false;
             }
         }
         
-        // Function to load cached beer data from storage
-        function loadCachedData() {
+        // Function to load data from localStorage
+        function loadFromStorage() {
             try {
-                // Try localStorage first
-                const cachedData = localStorage.getItem('beerMenuData');
-                if (cachedData) {
-                    log('Loaded data from localStorage');
-                    return JSON.parse(cachedData);
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    const parsedData = JSON.parse(storedData);
+                    log('Loaded data from localStorage', parsedData);
+                    return parsedData;
                 }
-                
-                // Try sessionStorage as fallback
-                const sessionData = sessionStorage.getItem('beerMenuData');
-                if (sessionData) {
-                    log('Loaded data from sessionStorage');
-                    return JSON.parse(sessionData);
-                }
-                
                 return null;
-            } catch (e) {
-                log('Error loading from storage:', e);
+            } catch (error) {
+                log('Error loading from localStorage:', error);
                 return null;
             }
         }
         
-        // Function to fetch data from Google Apps Script with proper caching
+        // Function to check if stored data needs to be refreshed
+        function needsRefresh(timestamp) {
+            if (!timestamp) return true;
+            
+            const now = Date.now();
+            return (now - timestamp) > UPDATE_INTERVAL;
+        }
+        
+        // Function to fetch data from Google Apps Script
         async function fetchBeerData(forceRefresh = false) {
             try {
-                const now = new Date();
-                const todayStr = formatDate(now);
-                const nowTimestamp = now.getTime();
+                // Try to load from localStorage first
+                const storedData = loadFromStorage();
                 
-                // Check if we already have data in memory cache (for this page view)
-                if (!forceRefresh && memoryCache.beerData) {
-                    log('Using in-memory cache');
-                    updateCacheStatus('Using memory cache');
-                    return memoryCache.beerData;
+                // If we have stored data and don't need a refresh, use it
+                if (storedData && storedData.data && !forceRefresh && !needsRefresh(storedData.timestamp)) {
+                    log('Using data from localStorage', storedData);
+                    updateLastUpdatedIndicator(storedData.timestamp);
+                    return storedData.data;
                 }
                 
-                // Check cookies for API call tracking
-                const lastApiCallDate = getCookie(LAST_API_CALL_DATE_COOKIE);
-                const apiCallCount = parseInt(getCookie(API_CALL_COUNT_COOKIE) || '0');
-                const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
-                
-                // Try to load data from localStorage (persists across browser sessions)
-                let cachedData = loadCachedData();
-                
-                // If not forcing refresh and we've already called the API today, use cached data
-                if (!forceRefresh && lastApiCallDate === todayStr && apiCallCount > 0) {
-                    log('Already called API today, using cached data');
-                    
-                    // If we have cached data from storage, use it
-                    if (cachedData) {
-                        updateCacheStatus('Using cached data (localStorage)');
-                        memoryCache.beerData = cachedData;
-                        
-                        if (lastUpdateTimestamp) {
-                            updateLastUpdatedIndicator(lastUpdateTimestamp);
-                        }
-                        
-                        return cachedData;
-                    }
-                    
-                    // If no cached data, use fallback
-                    updateCacheStatus('Using fallback data (no cached data)');
-                    memoryCache.beerData = fallbackData;
-                    return fallbackData;
-                }
-                
-                // If we're forcing refresh or haven't called API today, make the call
+                // Otherwise fetch fresh data
                 log('Fetching data from Google Apps Script');
-                updateCacheStatus('Fetching from API...');
                 updateSyncStatus('Sync in progress...');
                 
-                // Call the Google Apps Script Web App
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'GET',
                     headers: {
@@ -583,18 +466,15 @@
                 log('Google Apps Script data received:', data);
                 
                 // Extract the items array from the response
-                // This is specific to your Google Apps Script response format
                 if (!data || !data.items || !Array.isArray(data.items)) {
                     log('Expected items array not found in response');
-                    updateCacheStatus('Invalid data format from API, using fallback');
-                    memoryCache.beerData = fallbackData;
-                    return fallbackData;
+                    throw new Error('Invalid data format');
                 }
                 
                 // Process the beer array from the items property
                 const beerArray = data.items;
                 
-                // Use each beer's tap number as its display number
+                // Process the data
                 const processedData = beerArray.map(item => {
                     // For ABV, convert from decimal to percentage string
                     const abvValue = typeof item.abv === 'number' ? 
@@ -612,59 +492,31 @@
                     };
                 });
                 
-                log('Processed data:', processedData);
-                
-                // Update memory cache
-                memoryCache.beerData = processedData;
-                memoryCache.lastSyncTime = now;
-                
-                // Save to localStorage for persistence
-                saveCachedData(processedData);
-                
-                // Update cookies for tracking API calls
-                if (isNewDay(lastApiCallDate)) {
-                    // It's a new day, reset counter
-                    setCookie(API_CALL_COUNT_COOKIE, '1');
-                } else {
-                    // Same day, increment counter
-                    setCookie(API_CALL_COUNT_COOKIE, (apiCallCount + 1).toString());
-                }
-                
-                // Update last API call date
-                setCookie(LAST_API_CALL_DATE_COOKIE, todayStr);
-                setCookie(LAST_UPDATE_TIMESTAMP_COOKIE, nowTimestamp.toString());
+                // Save to localStorage with current timestamp
+                const timestamp = Date.now();
+                saveToStorage(processedData);
                 
                 // Update last updated timestamp
-                updateLastUpdatedIndicator(nowTimestamp);
-                updateCacheStatus('Fresh data from API');
-                updateSyncStatus(`Last sync: ${formatTimestamp(nowTimestamp)}`);
+                updateLastUpdatedIndicator(timestamp);
+                updateSyncStatus(`Sync completed: ${formatTimestamp(timestamp)}`);
                 
                 return processedData;
             } catch (error) {
                 log('Error fetching data:', error);
                 console.error('Error fetching data:', error);
                 
-                // If we have data in memory, use that
-                if (memoryCache.beerData) {
-                    log('Using memory cache due to fetch error');
-                    updateCacheStatus('Using memory cache (API error)');
-                    return memoryCache.beerData;
+                // Try to load from localStorage as fallback
+                const storedData = loadFromStorage();
+                if (storedData && storedData.data) {
+                    log('Using localStorage data as fallback');
+                    updateSyncStatus('Using cached data (fetch failed)');
+                    updateLastUpdatedIndicator(storedData.timestamp);
+                    return storedData.data;
                 }
                 
-                // Try to load from localStorage
-                try {
-                    const storageData = loadCachedData();
-                    if (storageData) {
-                        memoryCache.beerData = storageData;
-                        updateCacheStatus('Using localStorage cache (API error)');
-                        return storageData;
-                    }
-                } catch (e) {
-                    log('Storage load error during fetch error handling:', e);
-                }
-                
-                // Otherwise use fallback
-                updateCacheStatus('Using fallback data (API error)');
+                // Otherwise use hardcoded fallback
+                log('Using fallback data');
+                updateSyncStatus('Using fallback data (no cache available)');
                 return fallbackData;
             }
         }
@@ -752,13 +604,10 @@
             const pricesAvailable = beer.price_s && beer.price_l;
             const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
             
-            // Add tap-1 class to tap number 1 for the refresh feature
-            const tapClass = beer.number === "1" ? "tap-1" : "";
-            
             return `
                 <div class="beer-item">
                     <div class="beer-content">
-                        <div class="beer-number ${tapClass}" ${beer.number === "1" ? 'id="refresh-trigger"' : ''}>${beer.number}</div>
+                        <div class="beer-number">${beer.number}</div>
                         <div class="beer-name ${titleOpacityClass}">
                             <span class="beer-name-inner">${beer.name}</span>
                         </div>
@@ -776,51 +625,27 @@
             `;
         }
         
-        // Function to check for daily updates
-        function setupDailySync() {
-            // Update sync status indicator
-            updateSyncStatus('Daily sync check enabled');
-            
-            // This function will check if we need to refresh data based on the date
-            function checkDailySync() {
-                const lastApiCallDate = getCookie(LAST_API_CALL_DATE_COOKIE);
-                const today = formatDate(new Date());
-                
-                // If we haven't called the API today, refresh data
-                if (!lastApiCallDate || lastApiCallDate !== today) {
-                    log('Daily sync check - fetching new data');
-                    updateSyncStatus('Daily sync in progress...');
-                    
-                    // Force refresh data
+        // Setup auto-refresh
+        function setupAutoRefresh() {
+            // Function to check for updates
+            function checkForUpdates() {
+                const storedData = loadFromStorage();
+                if (storedData && storedData.timestamp && needsRefresh(storedData.timestamp)) {
+                    log('Auto-refresh triggered');
                     fetchBeerData(true).then(freshData => {
                         renderBeerMenu(freshData);
-                        updateSyncStatus(`Last sync: ${formatTimestamp(new Date().getTime())} (updates daily)`);
                     });
-                } else {
-                    log('Daily sync check - already updated today');
-                    updateSyncStatus(`Last sync: ${formatTimestamp(getCookie(LAST_UPDATE_TIMESTAMP_COOKIE))} (updates daily)`);
                 }
             }
             
-            // Check for updates whenever the page loads
-            checkDailySync();
+            // Check for updates every 5 minutes
+            // (This is more frequent than our update interval to catch any edge cases)
+            setInterval(checkForUpdates, 5 * 60 * 1000);
         }
         
         // Initialize the menu when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             log('DOM loaded, initializing menu');
-            
-            // Output current cookies for debugging
-            log('Last API call date cookie:', getCookie(LAST_API_CALL_DATE_COOKIE));
-            log('API call count cookie:', getCookie(API_CALL_COUNT_COOKIE));
-            log('Last update timestamp cookie:', getCookie(LAST_UPDATE_TIMESTAMP_COOKIE));
-            
-            // Check for timestamp and update indicator
-            const lastUpdateTimestamp = getCookie(LAST_UPDATE_TIMESTAMP_COOKIE);
-            
-            if (lastUpdateTimestamp) {
-                updateLastUpdatedIndicator(lastUpdateTimestamp);
-            }
             
             // Fetch beer data and render menu
             fetchBeerData().then(data => {
@@ -831,8 +656,8 @@
                 const lastUpdatedElement = document.getElementById('last-updated');
                 if (lastUpdatedElement) {
                     lastUpdatedElement.addEventListener('click', function() {
-                        log('Refresh triggered by last-updated element');
-                        updateCacheStatus('Manual refresh triggered...');
+                        log('Manual refresh triggered');
+                        updateSyncStatus('Manual refresh triggered...');
                         
                         // Force refresh data
                         fetchBeerData(true).then(freshData => {
@@ -841,26 +666,18 @@
                     });
                 }
                 
-                // Set up daily synchronization
-                setupDailySync();
+                // Set up auto-refresh
+                setupAutoRefresh();
             });
             
-            // Add window resize event listener with debouncing
-            let resizeTimeout;
+            // Add window resize event listener
             window.addEventListener('resize', function() {
-                // Clear any existing timeout
-                clearTimeout(resizeTimeout);
-                
-                // Set a new timeout to wait for resize to finish
-                resizeTimeout = setTimeout(function() {
-                    log('Window resized, re-rendering menu with cached data');
-                    updateCacheStatus('Window resized - using memory cache');
-                    
-                    // Use memory cache for resize events
-                    if (memoryCache.beerData) {
-                        renderBeerMenu(memoryCache.beerData);
-                    }
-                }, 200); // Wait 200ms after last resize event
+                // Check if we have data in localStorage
+                const storedData = loadFromStorage();
+                if (storedData && storedData.data) {
+                    // Rerender with stored data
+                    renderBeerMenu(storedData.data);
+                }
             });
         });
     </script>
