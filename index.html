@@ -201,6 +201,26 @@
             opacity: 0.5;
         }
 
+        /* Video Loading Screen */
+        .video-loading-container {
+            display: none; /* Hide by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            z-index: 9999;
+            overflow: hidden;
+            transition: opacity 0.5s ease;
+        }
+        
+        .video-loading {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         @media (min-width: 1300px) and (max-width: 1680px) {
             /* Large-sized screens breakpoint */
             body {
@@ -307,7 +327,7 @@
             }
             
             .beer-style-inner {
-                white-space: normal; /* Allow line breaks */``
+                white-space: normal; /* Allow line breaks */
                 animation: none !important; /* Disable animation on mobile */
             }
             
@@ -322,6 +342,17 @@
 
             .price-separator {
                 font-size: 12px;
+            }
+        }
+        
+        /* Loading container for small screens */
+        @media (max-width: 480px) {
+            .video-loading-container {
+                display: flex; /* Show video loading on small screens */
+            }
+            
+            .loading {
+                display: none; /* Hide text loading on small screens */
             }
         }
         
@@ -363,6 +394,17 @@
     </style>
 </head>
 <body>
+    <!-- Video Loading Container - Only visible on screens < 480px -->
+    <div class="video-loading-container" id="video-loading-container">
+        <video class="video-loading" id="loading-video" autoplay muted loop playsinline>
+            <source src="image/loading.mp4" type="video/mp4">
+            <!-- Fallback for browsers that don't support video -->
+            <div style="color: white; text-align: center; padding: 20px;">
+                Loading menu...
+            </div>
+        </video>
+    </div>
+
     <div class="container">
         <header>
             <a href="https://maps.app.goo.gl/2UUBqW9DnVAZRiTw7" target="_blank">
@@ -466,6 +508,24 @@
             
             const now = Date.now();
             return (now - timestamp) > UPDATE_INTERVAL;
+        }
+        
+        // Function to hide loading screens and show content
+        function hideLoadingScreens() {
+            // Hide video loading screen with a fade out
+            const videoLoadingContainer = document.getElementById('video-loading-container');
+            if (videoLoadingContainer) {
+                videoLoadingContainer.style.opacity = '0';
+                setTimeout(() => {
+                    videoLoadingContainer.style.display = 'none';
+                }, 500);
+            }
+            
+            // Hide text loading indicator
+            const loadingElements = document.querySelectorAll('.loading');
+            loadingElements.forEach(el => {
+                el.style.display = 'none';
+            });
         }
         
         // Function to fetch data from Google Apps Script
@@ -631,6 +691,9 @@
             
             // After rendering, check for text overflow
             setTimeout(checkForTextOverflow, 100);
+            
+            // Hide loading screens after content is rendered
+            hideLoadingScreens();
         }
         
         // Generate HTML for a single beer item
@@ -678,9 +741,34 @@
             setInterval(checkForUpdates, 5 * 60 * 1000);
         }
         
+        // Video loading event handling
+        function setupVideoLoading() {
+            const videoElement = document.getElementById('loading-video');
+            
+            if (videoElement) {
+                // When video can play, ensure it's ready for viewing
+                videoElement.addEventListener('canplay', function() {
+                    log('Video can play');
+                });
+                
+                // In case of error with the video
+                videoElement.addEventListener('error', function(e) {
+                    log('Video loading error:', e);
+                    // Hide video container in case of error
+                    const videoLoadingContainer = document.getElementById('video-loading-container');
+                    if (videoLoadingContainer) {
+                        videoLoadingContainer.style.display = 'none';
+                    }
+                });
+            }
+        }
+        
         // Initialize the menu when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             log('DOM loaded, initializing menu');
+            
+            // Setup video loading handling
+            setupVideoLoading();
             
             // Fetch beer data and render menu
             fetchBeerData().then(data => {
@@ -693,6 +781,13 @@
                     lastUpdatedElement.addEventListener('click', function() {
                         log('Manual refresh triggered');
                         updateSyncStatus('Manual refresh triggered...');
+                        
+                        // Show loading screen again on manual refresh
+                        const videoLoadingContainer = document.getElementById('video-loading-container');
+                        if (videoLoadingContainer && window.innerWidth <= 480) {
+                            videoLoadingContainer.style.display = 'flex';
+                            videoLoadingContainer.style.opacity = '1';
+                        }
                         
                         // Force refresh data
                         fetchBeerData(true).then(freshData => {
