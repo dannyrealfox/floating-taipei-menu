@@ -212,7 +212,7 @@
             background-color: var(--background-color);
             z-index: 9999;
             overflow: hidden;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.3s ease;
         }
         
         .video-loading {
@@ -397,7 +397,7 @@
     <!-- Video Loading Container - Only visible on screens < 480px -->
     <div class="video-loading-container" id="video-loading-container">
         <video class="video-loading" id="loading-video" autoplay muted loop playsinline>
-            <source src="image/loading.mp4" type="video/mp4">
+            <source src="/video/loading.mp4" type="video/mp4">
             <!-- Fallback for browsers that don't support video -->
             <div style="color: white; text-align: center; padding: 20px;">
                 Loading menu...
@@ -408,7 +408,7 @@
     <div class="container">
         <header>
             <a href="https://maps.app.goo.gl/2UUBqW9DnVAZRiTw7" target="_blank">
-              <img src="image/FTlogo.svg" alt="Floating Taipei" class="centered-logo">
+              <img src="/image/FTlogo.svg" alt="Floating Taipei" class="centered-logo">
             </a>
         </header>
         
@@ -429,6 +429,12 @@
         
         // Storage key for localStorage
         const STORAGE_KEY = 'floatingTaipeiMenuData';
+        
+        // Variables to track video and content state
+        let menuDataLoaded = false;
+        let videoDuration = 0;  // Will store the video duration
+        let minPlayTime = 2000; // Minimum time to show video in milliseconds (2 seconds)
+        let loadingStartTime = Date.now(); // Track when loading began
         
         // Sample data for fallback
         const fallbackData = [
@@ -470,6 +476,55 @@
             }
         }
         
+        // Function to check if minimum display time has elapsed
+        function hasMinTimeElapsed() {
+            const timeElapsed = Date.now() - loadingStartTime;
+            log("Time elapsed since loading started:", timeElapsed);
+            return timeElapsed >= minPlayTime;
+        }
+        
+        // Function to hide loading screens and show content
+        function hideLoadingScreens() {
+            log("Attempting to hide loading screens");
+            
+            // Check if minimum time has elapsed
+            if (!hasMinTimeElapsed()) {
+                const remainingTime = minPlayTime - (Date.now() - loadingStartTime);
+                log(`Minimum display time not met, delaying hide for ${remainingTime}ms`);
+                
+                // Wait for the remaining time before hiding
+                setTimeout(hideLoadingScreens, remainingTime);
+                return;
+            }
+            
+            log("Hiding loading screens now");
+            
+            // Hide video loading screen with a fade out
+            const videoLoadingContainer = document.getElementById('video-loading-container');
+            const videoElement = document.getElementById('loading-video');
+            
+            if (videoLoadingContainer) {
+                // Start the fade out transition
+                videoLoadingContainer.style.opacity = '0';
+                
+                // Stop the video from playing
+                if (videoElement) {
+                    videoElement.pause();
+                }
+                
+                // Remove from DOM after fade completes
+                setTimeout(() => {
+                    videoLoadingContainer.style.display = 'none';
+                }, 300);
+            }
+            
+            // Hide text loading indicator
+            const loadingElements = document.querySelectorAll('.loading');
+            loadingElements.forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+        
         // Function to save data to localStorage with timestamp
         function saveToStorage(data) {
             try {
@@ -508,24 +563,6 @@
             
             const now = Date.now();
             return (now - timestamp) > UPDATE_INTERVAL;
-        }
-        
-        // Function to hide loading screens and show content
-        function hideLoadingScreens() {
-            // Hide video loading screen with a fade out
-            const videoLoadingContainer = document.getElementById('video-loading-container');
-            if (videoLoadingContainer) {
-                videoLoadingContainer.style.opacity = '0';
-                setTimeout(() => {
-                    videoLoadingContainer.style.display = 'none';
-                }, 500);
-            }
-            
-            // Hide text loading indicator
-            const loadingElements = document.querySelectorAll('.loading');
-            loadingElements.forEach(el => {
-                el.style.display = 'none';
-            });
         }
         
         // Function to fetch data from Google Apps Script
@@ -656,6 +693,8 @@
             
             if (!beers || beers.length === 0) {
                 menuContainer.innerHTML = '<p style="text-align: center; padding: 20px;">No beers available</p>';
+                menuDataLoaded = true;
+                hideLoadingScreens();
                 return;
             }
             
@@ -692,7 +731,10 @@
             // After rendering, check for text overflow
             setTimeout(checkForTextOverflow, 100);
             
-            // Hide loading screens after content is rendered
+            // Mark menu data as loaded
+            menuDataLoaded = true;
+            
+            // Check if minimum time has elapsed and hide loading screens
             hideLoadingScreens();
         }
         
@@ -746,9 +788,21 @@
             const videoElement = document.getElementById('loading-video');
             
             if (videoElement) {
-                // When video can play, ensure it's ready for viewing
-                videoElement.addEventListener('canplay', function() {
-                    log('Video can play');
+                // Reset loading start time
+                loadingStartTime = Date.now();
+                
+                // When video can play, get its duration
+                videoElement.addEventListener('loadedmetadata', function() {
+                    videoDuration = videoElement.duration * 1000; // Convert to milliseconds
+                    log('Video duration:', videoDuration);
+                    
+                    // If video has a duration, use it to set minPlayTime 
+                    // (ensuring at least one full play)
+                    if (videoDuration > 0) {
+                        // Use the actual video duration, but at least 2 seconds
+                        minPlayTime = Math.max(videoDuration, 2000);
+                        log('Set minimum play time to:', minPlayTime);
+                    }
                 });
                 
                 // In case of error with the video
@@ -759,6 +813,7 @@
                     if (videoLoadingContainer) {
                         videoLoadingContainer.style.display = 'none';
                     }
+                    minPlayTime = 0; // Skip waiting if video errors
                 });
             }
         }
@@ -782,9 +837,18 @@
                         log('Manual refresh triggered');
                         updateSyncStatus('Manual refresh triggered...');
                         
+                        // Reset loading start time
+                        loadingStartTime = Date.now();
+                        
                         // Show loading screen again on manual refresh
                         const videoLoadingContainer = document.getElementById('video-loading-container');
                         if (videoLoadingContainer && window.innerWidth <= 480) {
+                            const videoElement = document.getElementById('loading-video');
+                            if (videoElement) {
+                                // Reset the video to beginning
+                                videoElement.currentTime = 0;
+                                videoElement.play();
+                            }
                             videoLoadingContainer.style.display = 'flex';
                             videoLoadingContainer.style.opacity = '1';
                         }
