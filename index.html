@@ -50,7 +50,7 @@
             background-color: var(--background-color);
             color: var(--text-color);
             line-height: 1.3;
-            padding: 100px; /* Fit Projector */
+            padding: 40px 0; /* Fit Projector */
         }
         
         .container {
@@ -70,14 +70,17 @@
             width: 100%;
             max-width: 100%;
             gap: 40px;
-            margin-bottom: 2px;
         }
         
         .beer-item {
             display: block;
             padding: 0;
-            margin-bottom: 38px;
+            margin-bottom: 45px;
             width: 100%; /* Ensure full width */
+        }
+
+        .beer-item:last-child {
+            margin-bottom: 0px;
         }
         
         .beer-content {
@@ -102,7 +105,7 @@
         }
         
         .beer-name {
-            font-size: 24px;
+            font-size: 27px;
             font-weight: 400;
             /* letter-spacing: -0.02em; */
             grid-column: 2;
@@ -127,7 +130,7 @@
         .beer-style-group {
             display: flex;
             align-items: end;
-            font-size: 23px;
+            font-size: 26px;
             color: var(--muted-color);
             font-weight: 300;
             white-space: nowrap;
@@ -146,7 +149,7 @@
         
         .beer-abv {
             font-family: 'STIX Two Text', serif;
-            font-size: 24px;
+            font-size: 26px;
             font-style: italic;
             color: var(--price-color);
             font-weight: normal;
@@ -155,7 +158,7 @@
         }
         
         .price-info {
-            font-size: 24px;
+            font-size: 26px;
             color: #ffffff;
             font-weight: 500;
             white-space: nowrap;
@@ -163,7 +166,7 @@
         
         .price-separator {
             font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 16px;
+            font-size: 20px;
             color: #D1AF90;
             font-weight:300;
             margin: 0 3px; /* Slightly increased */
@@ -226,6 +229,26 @@
             body {
                 padding: 40px;
             }    
+
+            .beer-name {
+                font-size: 24px;    
+            }
+        
+            .beer-style-group {
+                font-size: 23px;
+            }
+        
+            .beer-abv {
+            font-size: 24px;
+            }
+        
+            .price-info {
+                font-size: 24px;
+            }
+        
+            .price-separator {
+            font-size: 16px;
+            }
         }
         
         @media (min-width: 769px) and (max-width: 1299px) {
