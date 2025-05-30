@@ -16,7 +16,7 @@
     <title>漂浮台北 Floating Taipei</title>
     
     <link rel="icon" type="image/png" href="image/favicon-48x48.png">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700&family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
 
 
     <!-- Google tag (gtag.js) -->
@@ -50,11 +50,11 @@
             background-color: var(--background-color);
             color: var(--text-color);
             line-height: 1.3;
-            padding: 40px 0; /* Fit Projector */
+            padding: 100px 40px; /* Fit Projector */
         }
         
         .container {
-            max-width: 1920px;
+            /* max-width: 1920px; */
             width: 100%;
             margin: 0 auto;
             padding: 0 15px; /* Add some padding on the sides */
@@ -69,13 +69,13 @@
             display: flex;
             width: 100%;
             max-width: 100%;
-            gap: 40px;
+            gap: 60px;
         }
         
         .beer-item {
             display: block;
             padding: 0;
-            margin-bottom: 45px;
+            margin-bottom: 58px;
             width: 100%; /* Ensure full width */
         }
 
@@ -94,18 +94,18 @@
         /* Beer elements styling */
         .beer-number {
             font-family: 'STIX Two Text', 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 40px;
+            font-size: 60px;
             font-weight: 500;
             color: var(--number-color);
             grid-row: 1 / span 2;
             align-self: center;
-            width: 24px;
+            width: 44px;
             text-align: right;
             letter-spacing: -0.05em;
         }
         
         .beer-name {
-            font-size: 27px;
+            font-size: 35px;
             font-weight: 400;
             /* letter-spacing: -0.02em; */
             grid-column: 2;
@@ -130,7 +130,7 @@
         .beer-style-group {
             display: flex;
             align-items: end;
-            font-size: 26px;
+            font-size: 34px;
             color: var(--muted-color);
             font-weight: 300;
             white-space: nowrap;
@@ -149,7 +149,7 @@
         
         .beer-abv {
             font-family: 'STIX Two Text', serif;
-            font-size: 26px;
+            font-size: 34px;
             font-style: italic;
             color: var(--price-color);
             font-weight: normal;
@@ -158,7 +158,7 @@
         }
         
         .price-info {
-            font-size: 26px;
+            font-size: 34px;
             color: #ffffff;
             font-weight: 500;
             white-space: nowrap;
@@ -166,7 +166,7 @@
         
         .price-separator {
             font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 20px;
+            font-size: 26px;
             color: #D1AF90;
             font-weight:300;
             margin: 0 3px; /* Slightly increased */
@@ -224,12 +224,25 @@
             object-fit: cover;
         }
 
-        @media (min-width: 1300px) and (max-width: 1680px) {
+        @media (min-width: 1300px) and (max-width: 1920px) {
             /* Large-sized screens breakpoint */
             body {
                 padding: 40px;
             }    
 
+            .menu-row {
+                gap: 40px;
+            }   
+
+            .beer-item {
+            margin-bottom: 45px;
+            }
+
+            .beer-number {
+            font-size: 40px;
+            width: 24px;
+            }
+            
             .beer-name {
                 font-size: 24px;    
             }
