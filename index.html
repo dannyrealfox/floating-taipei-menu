@@ -224,7 +224,21 @@
             object-fit: cover;
         }
 
+        .size-test {
+            width: 100%; 
+            max-width: 1920px; 
+            background-color: #CCC; 
+            color: #000; 
+            font-size: 100px; 
+            white-space: nowrap; 
+            overflow: hidden;
+        }
+        
         @media (min-width: 1300px) and (max-width: 1920px) {
+            .size-test {
+                display:none;
+            }
+            
             /* Large-sized screens breakpoint */
             body {
                 padding: 40px;
@@ -451,7 +465,8 @@
         <div class="menu-grid" id="menu-container">
             <div class="loading">Loading menu...</div>
         </div>
-        
+
+        <div class="size-test">TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST</div>
         <div class="last-updated" id="last-updated"></div>
         <div class="sync-indicator" id="sync-indicator"></div>
     </div>
