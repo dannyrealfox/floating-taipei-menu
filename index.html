@@ -50,14 +50,12 @@
             background-color: var(--background-color);
             color: var(--text-color);
             line-height: 1.3;
-            padding: 100px 50px; /* Fit Projector */
+            padding: 40px;
         }
         
         .container {
-            /* max-width: 1920px; */
             width: 100%;
             margin: 0 auto;
-            padding: 0 15px; /* Add some padding on the sides */
         }
         
         header {
@@ -75,7 +73,7 @@
         .beer-item {
             display: block;
             padding: 0;
-            margin-bottom: 58px;
+            margin-bottom: 45px;
             width: 100%; /* Ensure full width */
         }
 
@@ -94,18 +92,18 @@
         /* Beer elements styling */
         .beer-number {
             font-family: 'STIX Two Text', 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 70px;
+            font-size: 40px;
             font-weight: 500;
             color: var(--number-color);
             grid-row: 1 / span 2;
             align-self: center;
-            width: 50px;
+            width: 24px;
             text-align: right;
             letter-spacing: -0.05em;
         }
         
         .beer-name {
-            font-size: 45px;
+            font-size: 24px;
             font-weight: 400;
             /* letter-spacing: -0.02em; */
             grid-column: 2;
@@ -130,7 +128,7 @@
         .beer-style-group {
             display: flex;
             align-items: end;
-            font-size: 40px;
+            font-size: 23px;
             color: var(--muted-color);
             font-weight: 300;
             white-space: nowrap;
@@ -149,7 +147,7 @@
         
         .beer-abv {
             font-family: 'STIX Two Text', serif;
-            font-size: 40px;
+            font-size: 24px;
             font-style: italic;
             color: var(--price-color);
             font-weight: normal;
@@ -158,7 +156,7 @@
         }
         
         .price-info {
-            font-size: 40px;
+            font-size: 24px;
             color: #ffffff;
             font-weight: 500;
             white-space: nowrap;
@@ -166,7 +164,7 @@
         
         .price-separator {
             font-family: 'Copperplate', 'Copperplate Gothic Light', serif;
-            font-size: 26px;
+            font-size: 16px;
             color: #D1AF90;
             font-weight:300;
             margin: 0 3px; /* Slightly increased */
@@ -224,66 +222,46 @@
             object-fit: cover;
         }
 
-        .size-test {
-            width: 100%; 
-            max-width: 1920px; 
-            background-color: #CCC; 
-            color: #000; 
-            font-size: 100px; 
-            white-space: nowrap; 
-            overflow: hidden;
-        }
-        
-        @media (min-width: 1300px) and (max-width: 1920px) {
-            .size-test {
-                display:none;
-            }
+        @media (min-width: 960px) and (max-width: 1299px) {
             
-            /* Large-sized screens breakpoint */
+            /* Floating Projector 1280 x 75% = 960 */
             body {
-                padding: 40px;
-            }    
-
-            .menu-row {
-                gap: 40px;
-            }   
+                padding: 84px 40px;
+            }      
 
             .beer-item {
-            margin-bottom: 45px;
+            margin-bottom: 21px;
             }
 
             .beer-number {
-            font-size: 40px;
-            width: 24px;
+            font-size: 26px;
+            width: 26px;
             }
             
             .beer-name {
-                font-size: 24px;    
+                font-size: 16px;    
             }
         
             .beer-style-group {
-                font-size: 23px;
+                font-size: 15px;
+                max-width: 70%;
             }
         
             .beer-abv {
-            font-size: 24px;
+            font-size: 15px;
             }
         
             .price-info {
-                font-size: 24px;
+                font-size: 15px;
             }
         
             .price-separator {
-            font-size: 16px;
+            font-size: 12px;
             }
-        }
+        }    
         
-        @media (min-width: 769px) and (max-width: 1299px) {
-            .size-test {
-                display:none;
-            }
-            
-           /* Medium-sized screens breakpoint */
+        @media (min-width: 769px) and (max-width: 959px) {
+
             .beer-content {
                 gap: 0px 10px;
             }
@@ -302,7 +280,6 @@
             
             .beer-style-group {
                 font-size: 12px;
-                max-width: 60%;
             }
             
             .beer-abv {
@@ -320,9 +297,6 @@
         }
 
         @media (max-width: 768px) {
-            .size-test {
-                display:none;
-            }
             
             Header {
                 display: flex; /* Header shows on mobile */
@@ -332,24 +306,20 @@
             }
 
             .centered-logo {
-                max-height: 120px; /* Adjust based on your logo size */
+                max-height: 120px;
                 width: auto;
             }
             
             body {
-                padding: 10px 15px; /* Equal padding on left and right */
-            }
-            
-            .container {
-                padding: 0; /* Remove container padding on mobile */
+                padding: 10px 15px;
             }
             
             .beer-item {
-                margin-bottom: 20px; /* Increased bottom margin between items */
+                margin-bottom: 20px;
             }
             
             .beer-content {
-                gap: 0px 16px; /* Less margins */
+                gap: 0px 16px;
             }   
 
             .menu-row {
@@ -357,11 +327,11 @@
             }
             
             .beer-number {
-                font-size: 24px; /* Smaller font size */
-                width: 20px; /* Smaller width */
+                font-size: 24px;
+                width: 20px;
                 align-self: flex-start; /* Align at top */
-                line-height: 1; /* Tighter line height */
-                padding-top: 2px; /* Small top padding to align with first line */
+                line-height: 1;
+                padding-top: 2px;
                 text-align: center;
             }
             
@@ -377,10 +347,10 @@
             }
             
             .beer-style-group {
-                font-size: 12px; /* Smaller font for style and origin */
-                white-space: nowrap; /* Keep on one line */
-                overflow: hidden; /* Hide overflow */
-                text-overflow: ellipsis; /* Add ellipsis for truncated text */
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
                 max-width: 100%; /* Ensure it doesn't overflow its container */
             }
             
@@ -405,9 +375,6 @@
         
         /* Loading container for small screens */
         @media (max-width: 480px) {
-            .size-test {
-                display:none;
-            }
             
             .video-loading-container {
                 display: flex; /* Show video loading on small screens */
@@ -478,7 +445,6 @@
             <div class="loading">Loading menu...</div>
         </div>
 
-        <div class="size-test">TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST</div>
         <div class="last-updated" id="last-updated"></div>
         <div class="sync-indicator" id="sync-indicator"></div>
     </div>
