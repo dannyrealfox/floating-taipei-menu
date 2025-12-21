@@ -768,6 +768,9 @@
             // Check if both prices are missing
             const pricesAvailable = beer.price_s || beer.price_l;
             const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
+
+            // Only show separator if both prices exist
+            const separator = (beer.price_s && beer.price_l) ? '/' : '';
             
             return `
                 <div class="beer-item">
@@ -782,7 +785,7 @@
                             </div>
                             <div class="beer-price-group">
                                 <div class="beer-abv">${beer.abv}</div>
-                                <div class="price-info">${beer.price_s || ''}<span class="price-separator">${pricesAvailable ? '/' : ''}</span>${beer.price_l || ''}</div>
+                                <div class="price-info">${beer.price_s || ''}<span class="price-separator">${separator}</span>${beer.price_l || ''}</div>
                             </div>
                         </div>
                     </div>
