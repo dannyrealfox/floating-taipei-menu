@@ -766,7 +766,7 @@
         // Generate HTML for a single beer item
         function generateBeerItem(beer) {
             // Check if both prices are missing
-            const pricesAvailable = beer.price_s && beer.price_l;
+            const pricesAvailable = beer.price_s || beer.price_l;
             const titleOpacityClass = pricesAvailable ? '' : 'opacity-50';
             
             return `
